@@ -1,0 +1,24 @@
+# Dependencias instaladas por npm
+node_modules/
+
+# Variables privadas y contraseñas
+.env
+.env.*
+!.env.example
+
+# Versiones compiladas del proyecto
+dist/
+build/
+
+# Informes generados por pruebas
+coverage/
+
+# Archivos de registro
+*.log
+
+# Archivos propios del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Configuración personal de Visual Studio Code
+.vscode/
