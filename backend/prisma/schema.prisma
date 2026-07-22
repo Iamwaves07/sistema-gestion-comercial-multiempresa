@@ -8,24 +8,25 @@ datasource db {
 }
 
 model Empresa {
-  id        Int       @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   nombre    String
-  rut       String    @unique
+  rut       String  @unique
   correo    String
   telefono String?
   direccion String?
-  estado    Boolean   @default(true)
+  estado    Boolean @default(true)
 
-  usuarios  Usuario[]
+  usuarios   Usuario[]
+  categorias Categoria[]
 }
 
 model Rol {
-  id          Int       @id @default(autoincrement())
-  nombre      String    @unique
+  id          Int     @id @default(autoincrement())
+  nombre      String  @unique
   descripcion String?
-  estado      Boolean   @default(true)
+  estado      Boolean @default(true)
 
-  usuarios    Usuario[]
+  usuarios Usuario[]
 }
 
 model Usuario {
@@ -39,4 +40,17 @@ model Usuario {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   rol     Rol     @relation(fields: [rolId], references: [id])
+}
+
+model Categoria {
+  id          Int     @id @default(autoincrement())
+  empresaId   Int
+  nombre      String
+  descripcion String?
+  estado      Boolean @default(true)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
 }
