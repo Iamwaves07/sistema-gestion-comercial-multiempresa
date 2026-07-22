@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TipoMovimientoInventario {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
 model Empresa {
   id        Int     @id @default(autoincrement())
   nombre    String
@@ -16,10 +22,11 @@ model Empresa {
   direccion String?
   estado    Boolean @default(true)
 
-  usuarios   Usuario[]
-  categorias Categoria[]
-  productos  Producto[]
-  clientes   Cliente[]
+  usuarios    Usuario[]
+  categorias  Categoria[]
+  productos   Producto[]
+  clientes    Cliente[]
+  movimientos MovimientoInventario[]
 }
 
 model Rol {
@@ -40,8 +47,9 @@ model Usuario {
   password  String
   estado    Boolean @default(true)
 
-  empresa Empresa @relation(fields: [empresaId], references: [id])
-  rol     Rol     @relation(fields: [rolId], references: [id])
+  empresa     Empresa                @relation(fields: [empresaId], references: [id])
+  rol         Rol                    @relation(fields: [rolId], references: [id])
+  movimientos MovimientoInventario[]
 
   @@index([empresaId])
   @@index([rolId])
@@ -71,8 +79,9 @@ model Producto {
   stockMinimo Int     @default(0)
   estado      Boolean @default(true)
 
-  empresa   Empresa   @relation(fields: [empresaId], references: [id])
-  categoria Categoria @relation(fields: [categoriaId], references: [id])
+  empresa     Empresa                @relation(fields: [empresaId], references: [id])
+  categoria   Categoria              @relation(fields: [categoriaId], references: [id])
+  movimientos MovimientoInventario[]
 
   @@index([empresaId])
   @@index([categoriaId])
@@ -92,4 +101,23 @@ model Cliente {
 
   @@unique([empresaId, rut])
   @@index([empresaId])
+}
+
+model MovimientoInventario {
+  id            Int                      @id @default(autoincrement())
+  empresaId     Int
+  productoId    Int
+  usuarioId     Int
+  tipo          TipoMovimientoInventario
+  cantidad      Int
+  observacion   String?
+  fechaCreacion DateTime                 @default(now())
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId, fechaCreacion])
+  @@index([productoId])
+  @@index([usuarioId])
 }
