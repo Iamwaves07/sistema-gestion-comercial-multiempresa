@@ -18,6 +18,7 @@ model Empresa {
 
   usuarios   Usuario[]
   categorias Categoria[]
+  productos  Producto[]
 }
 
 model Rol {
@@ -40,6 +41,9 @@ model Usuario {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   rol     Rol     @relation(fields: [rolId], references: [id])
+
+  @@index([empresaId])
+  @@index([rolId])
 }
 
 model Categoria {
@@ -49,8 +53,26 @@ model Categoria {
   descripcion String?
   estado      Boolean @default(true)
 
-  empresa Empresa @relation(fields: [empresaId], references: [id])
+  empresa  Empresa   @relation(fields: [empresaId], references: [id])
+  productos Producto[]
 
   @@unique([empresaId, nombre])
   @@index([empresaId])
+}
+
+model Producto {
+  id          Int     @id @default(autoincrement())
+  empresaId   Int
+  categoriaId Int
+  nombre      String
+  precio      Decimal @db.Decimal(12, 2)
+  stock       Int     @default(0)
+  stockMinimo Int     @default(0)
+  estado      Boolean @default(true)
+
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  categoria Categoria @relation(fields: [categoriaId], references: [id])
+
+  @@index([empresaId])
+  @@index([categoriaId])
 }
