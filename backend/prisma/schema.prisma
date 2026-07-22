@@ -19,6 +19,7 @@ model Empresa {
   usuarios   Usuario[]
   categorias Categoria[]
   productos  Producto[]
+  clientes   Cliente[]
 }
 
 model Rol {
@@ -75,4 +76,20 @@ model Producto {
 
   @@index([empresaId])
   @@index([categoriaId])
+}
+
+model Cliente {
+  id        Int     @id @default(autoincrement())
+  empresaId Int
+  nombre    String
+  rut       String
+  correo    String?
+  telefono String?
+  direccion String?
+  estado    Boolean @default(true)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, rut])
+  @@index([empresaId])
 }
