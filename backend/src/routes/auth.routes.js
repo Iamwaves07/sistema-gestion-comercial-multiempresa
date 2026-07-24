@@ -2,7 +2,10 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../lib/prisma.js";
 import { generateAccessToken } from "../lib/auth.js";
-import { authRequired } from "../middlewares/auth.middleware.js";
+import {
+  authRequired,
+  authorizeRoles,
+} from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -146,5 +149,20 @@ router.get("/me", authRequired, async (req, res) => {
     });
   }
 });
-
+router.get(
+  "/admin-check",
+  authRequired,
+  authorizeRoles("Administrador"),
+  (req, res) => {
+    return res.status(200).json({
+      success: true,
+      message: "Acceso autorizado para el administrador",
+      data: {
+        usuarioId: req.auth.usuarioId,
+        empresaId: req.auth.empresaId,
+        rol: req.auth.rol,
+      },
+    });
+  }
+);
 export default router;

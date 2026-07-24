@@ -44,3 +44,23 @@ export function authRequired(req, res, next) {
     });
   }
 }
+
+export function authorizeRoles(...rolesPermitidos) {
+  return (req, res, next) => {
+    if (!req.auth) {
+      return res.status(401).json({
+        success: false,
+        message: "Autenticación requerida",
+      });
+    }
+
+    if (!rolesPermitidos.includes(req.auth.rol)) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permisos para realizar esta acción",
+      });
+    }
+
+    return next();
+  };
+}
