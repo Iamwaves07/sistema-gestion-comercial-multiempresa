@@ -1,5 +1,6 @@
 import express from "express";
 import prisma from "./lib/prisma.js";
+import authRouter from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -29,5 +30,7 @@ app.get("/health/database", async (req, res) => {
     });
   }
 });
+
+app.use("/auth", authRouter);
 
 export default app;
