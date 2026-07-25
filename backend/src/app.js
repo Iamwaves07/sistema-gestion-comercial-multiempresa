@@ -1,3 +1,4 @@
+import categoriaRouter from "./routes/categoria.routes.js";
 import express from "express";
 import prisma from "./lib/prisma.js";
 import authRouter from "./routes/auth.routes.js";
@@ -32,5 +33,6 @@ app.get("/health/database", async (req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/categorias", categoriaRouter);
 
 export default app;
