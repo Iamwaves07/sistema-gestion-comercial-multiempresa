@@ -2,6 +2,7 @@ import categoriaRouter from "./routes/categoria.routes.js";
 import express from "express";
 import prisma from "./lib/prisma.js";
 import authRouter from "./routes/auth.routes.js";
+import productoRouter from "./routes/producto.routes.js";
 
 const app = express();
 
@@ -34,5 +35,6 @@ app.get("/health/database", async (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/categorias", categoriaRouter);
+app.use("/productos", productoRouter);
 
 export default app;
