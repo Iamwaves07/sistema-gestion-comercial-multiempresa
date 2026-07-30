@@ -4,6 +4,7 @@ import prisma from "./lib/prisma.js";
 import authRouter from "./routes/auth.routes.js";
 import productoRouter from "./routes/producto.routes.js";
 import clienteRouter from "./routes/cliente.routes.js";
+import movimientoRouter from "./routes/movimiento.routes.js";
 
 const app = express();
 
@@ -38,5 +39,6 @@ app.use("/auth", authRouter);
 app.use("/categorias", categoriaRouter);
 app.use("/productos", productoRouter);
 app.use("/clientes", clienteRouter);
+app.use("/movimientos", movimientoRouter);
 
 export default app;
