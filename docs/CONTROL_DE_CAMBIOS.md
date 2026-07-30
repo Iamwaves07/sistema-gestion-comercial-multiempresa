@@ -298,3 +298,37 @@ Cada nueva funcionalidad deberá seguir este orden:
 10. Actualizar las secciones correspondientes del informe.
 
 Una funcionalidad no debe describirse como implementada mientras no haya completado todas las etapas anteriores.
+
+## Gestión de empresas
+
+Se desarrolló el módulo de gestión de empresas, disponible exclusivamente para usuarios con rol `SuperAdministrador`.
+
+### Endpoints desarrollados
+
+- `POST /empresas`: crear una empresa.
+- `GET /empresas`: listar todas las empresas.
+- `GET /empresas/:id`: consultar una empresa por su identificador.
+- `PUT /empresas/:id`: actualizar los datos de una empresa.
+- `DELETE /empresas/:id`: desactivar lógicamente una empresa.
+- `PATCH /empresas/:id/reactivar`: reactivar una empresa desactivada.
+
+### Validaciones y seguridad
+
+- Todas las rutas requieren un token JWT válido.
+- El acceso está restringido al rol `SuperAdministrador`.
+- Se validan los campos obligatorios, el formato del correo y el formato básico del RUT.
+- Se impide registrar empresas con un RUT duplicado.
+- La eliminación es lógica mediante el campo `estado`, evitando borrar físicamente los registros.
+
+### Pruebas realizadas
+
+Se comprobó correctamente:
+
+- creación de una empresa;
+- listado general;
+- consulta por ID;
+- actualización de datos;
+- desactivación lógica;
+- reactivación.
+
+La empresa de prueba utilizada fue `Comercial Andina Limitada`, identificada con el ID `5`.
