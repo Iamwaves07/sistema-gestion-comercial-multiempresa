@@ -8,6 +8,9 @@ const requiredVariables = [
   "SEED_ADMIN_NOMBRE",
   "SEED_ADMIN_CORREO",
   "SEED_ADMIN_PASSWORD",
+  "SEED_SUPERADMIN_NOMBRE",
+  "SEED_SUPERADMIN_CORREO",
+  "SEED_SUPERADMIN_PASSWORD",
 ];
 
 function validateEnvironmentVariables() {
@@ -21,8 +24,13 @@ function validateEnvironmentVariables() {
 async function main() {
   validateEnvironmentVariables();
 
-  const passwordHash = await bcrypt.hash(
+  const administradorPasswordHash = await bcrypt.hash(
     process.env.SEED_ADMIN_PASSWORD,
+    12
+  );
+
+  const superAdministradorPasswordHash = await bcrypt.hash(
+    process.env.SEED_SUPERADMIN_PASSWORD,
     12
   );
 
@@ -39,6 +47,21 @@ async function main() {
       nombre: process.env.SEED_EMPRESA_NOMBRE,
       rut: process.env.SEED_EMPRESA_RUT,
       correo: process.env.SEED_EMPRESA_CORREO,
+      estado: true,
+    },
+  });
+
+  const rolSuperAdministrador = await prisma.rol.upsert({
+    where: {
+      nombre: "SuperAdministrador",
+    },
+    update: {
+      descripcion: "Acceso global a la administración del sistema",
+      estado: true,
+    },
+    create: {
+      nombre: "SuperAdministrador",
+      descripcion: "Acceso global a la administración del sistema",
       estado: true,
     },
   });
@@ -81,7 +104,7 @@ async function main() {
       empresaId: empresa.id,
       rolId: rolAdministrador.id,
       nombre: process.env.SEED_ADMIN_NOMBRE,
-      password: passwordHash,
+      password: administradorPasswordHash,
       estado: true,
     },
     create: {
@@ -89,7 +112,28 @@ async function main() {
       rolId: rolAdministrador.id,
       nombre: process.env.SEED_ADMIN_NOMBRE,
       correo: process.env.SEED_ADMIN_CORREO,
-      password: passwordHash,
+      password: administradorPasswordHash,
+      estado: true,
+    },
+  });
+
+  const superAdministrador = await prisma.usuario.upsert({
+    where: {
+      correo: process.env.SEED_SUPERADMIN_CORREO,
+    },
+    update: {
+      empresaId: empresa.id,
+      rolId: rolSuperAdministrador.id,
+      nombre: process.env.SEED_SUPERADMIN_NOMBRE,
+      password: superAdministradorPasswordHash,
+      estado: true,
+    },
+    create: {
+      empresaId: empresa.id,
+      rolId: rolSuperAdministrador.id,
+      nombre: process.env.SEED_SUPERADMIN_NOMBRE,
+      correo: process.env.SEED_SUPERADMIN_CORREO,
+      password: superAdministradorPasswordHash,
       estado: true,
     },
   });
@@ -97,7 +141,10 @@ async function main() {
   console.log("Datos iniciales creados correctamente:");
   console.log(`Empresa: ${empresa.nombre}`);
   console.log(`Administrador: ${administrador.correo}`);
-  console.log("Roles: Administrador y Vendedor");
+  console.log(`SuperAdministrador: ${superAdministrador.correo}`);
+  console.log(
+    "Roles: SuperAdministrador, Administrador y Vendedor"
+  );
 }
 
 main()
