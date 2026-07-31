@@ -12,6 +12,10 @@ import cors from "cors";
 import helmet from "helmet";
 
 import { loginLimiter } from "./middlewares/security.middleware.js";
+import {
+  notFoundHandler,
+  errorHandler,
+} from "./middlewares/error.middleware.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -66,5 +70,8 @@ app.use("/movimientos", movimientoRouter);
 app.use("/empresas", empresaRouter);
 app.use("/usuarios", usuarioRouter);
 app.use("/roles", rolRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
