@@ -8,10 +8,29 @@ import movimientoRouter from "./routes/movimiento.routes.js";
 import empresaRouter from "./routes/empresa.routes.js";
 import usuarioRouter from "./routes/usuario.routes.js";
 import rolRouter from "./routes/rol.routes.js";
+import cors from "cors";
+import helmet from "helmet";
+
+import { loginLimiter } from "./middlewares/security.middleware.js";
 
 const app = express();
+app.disable("x-powered-by");
 
-app.use(express.json());
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.use(
+  express.json({
+    limit: "100kb",
+  })
+);
 
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -38,6 +57,7 @@ app.get("/health/database", async (req, res) => {
   }
 });
 
+app.use("/auth/login", loginLimiter);
 app.use("/auth", authRouter);
 app.use("/categorias", categoriaRouter);
 app.use("/productos", productoRouter);
