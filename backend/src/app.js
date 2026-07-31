@@ -6,6 +6,7 @@ import productoRouter from "./routes/producto.routes.js";
 import clienteRouter from "./routes/cliente.routes.js";
 import movimientoRouter from "./routes/movimiento.routes.js";
 import empresaRouter from "./routes/empresa.routes.js";
+import usuarioRouter from "./routes/usuario.routes.js";
 
 const app = express();
 
@@ -42,5 +43,6 @@ app.use("/productos", productoRouter);
 app.use("/clientes", clienteRouter);
 app.use("/movimientos", movimientoRouter);
 app.use("/empresas", empresaRouter);
+app.use("/usuarios", usuarioRouter);
 
 export default app;

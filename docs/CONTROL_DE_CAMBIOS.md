@@ -332,3 +332,52 @@ Se comprobó correctamente:
 - reactivación.
 
 La empresa de prueba utilizada fue `Comercial Andina Limitada`, identificada con el ID `5`.
+## Gestión de usuarios
+
+Se desarrolló el módulo de gestión de usuarios con autenticación JWT, separación multiempresa y control de acceso según rol.
+
+### Endpoints desarrollados
+
+- `POST /usuarios`: crear un usuario.
+- `GET /usuarios`: listar usuarios según el alcance del rol autenticado.
+- `GET /usuarios/:id`: consultar un usuario por su identificador.
+- `PUT /usuarios/:id`: actualizar los datos, empresa, rol o contraseña de un usuario.
+- `DELETE /usuarios/:id`: desactivar lógicamente un usuario.
+- `PATCH /usuarios/:id/reactivar`: reactivar un usuario desactivado.
+
+### Reglas de acceso
+
+- `SuperAdministrador` puede gestionar usuarios con rol `Administrador` o `Vendedor` en cualquier empresa activa.
+- `Administrador` puede gestionar solamente usuarios con rol `Vendedor` dentro de su propia empresa.
+- `Vendedor` no tiene acceso al módulo de usuarios.
+- Las cuentas `SuperAdministrador` no pueden crearse, editarse, desactivarse ni reactivarse mediante estas rutas.
+- Un Administrador no puede consultar usuarios de otras empresas ni cuentas SuperAdministrador.
+
+### Validaciones y seguridad
+
+- Todas las rutas requieren un token JWT válido.
+- Se valida el formato del correo.
+- La contraseña debe contener al menos ocho caracteres.
+- Las contraseñas se almacenan mediante hash con `bcrypt`.
+- Se impide registrar correos duplicados.
+- Solo se pueden asignar empresas y roles activos.
+- La eliminación es lógica mediante el campo `estado`.
+- No se permite reactivar usuarios pertenecientes a una empresa inactiva.
+- Las contraseñas no se incluyen en las respuestas de la API.
+
+### Pruebas realizadas
+
+Se comprobó correctamente:
+
+- creación de un Administrador mediante SuperAdministrador;
+- listado general de usuarios mediante SuperAdministrador;
+- consulta individual por ID;
+- actualización sin reemplazar la contraseña;
+- desactivación lógica;
+- reactivación;
+- listado limitado a la empresa del Administrador;
+- bloqueo al intentar crear otro Administrador desde una cuenta Administrador;
+- creación permitida de un Vendedor por el Administrador de su empresa;
+- bloqueo de acceso al módulo de usuarios para el rol Vendedor.
+
+Los usuarios de prueba creados pertenecen a `Comercial Andina Limitada`.
