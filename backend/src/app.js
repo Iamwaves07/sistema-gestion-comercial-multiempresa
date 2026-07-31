@@ -7,6 +7,7 @@ import clienteRouter from "./routes/cliente.routes.js";
 import movimientoRouter from "./routes/movimiento.routes.js";
 import empresaRouter from "./routes/empresa.routes.js";
 import usuarioRouter from "./routes/usuario.routes.js";
+import rolRouter from "./routes/rol.routes.js";
 
 const app = express();
 
@@ -44,5 +45,6 @@ app.use("/clientes", clienteRouter);
 app.use("/movimientos", movimientoRouter);
 app.use("/empresas", empresaRouter);
 app.use("/usuarios", usuarioRouter);
+app.use("/roles", rolRouter);
 
 export default app;

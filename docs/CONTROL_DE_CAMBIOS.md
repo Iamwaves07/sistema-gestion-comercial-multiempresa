@@ -381,3 +381,34 @@ Se comprobó correctamente:
 - bloqueo de acceso al módulo de usuarios para el rol Vendedor.
 
 Los usuarios de prueba creados pertenecen a `Comercial Andina Limitada`.
+## Consulta de roles asignables
+
+Se desarrolló el endpoint de consulta de roles disponibles según los permisos del usuario autenticado.
+
+### Endpoint desarrollado
+
+- `GET /roles`: obtiene los roles activos que el usuario puede asignar al crear o actualizar usuarios.
+
+### Reglas de acceso
+
+- `SuperAdministrador` puede consultar los roles `Administrador` y `Vendedor`.
+- `Administrador` puede consultar solamente el rol `Vendedor`.
+- `Vendedor` no tiene acceso al endpoint.
+- El rol `SuperAdministrador` no se muestra como asignable, ya que estas cuentas se administran únicamente mediante el proceso controlado de carga inicial.
+
+### Validaciones y seguridad
+
+- La ruta requiere un token JWT válido.
+- El acceso se controla mediante roles.
+- Solo se devuelven roles activos.
+- La respuesta no permite crear, modificar ni eliminar roles.
+
+### Pruebas realizadas
+
+Se comprobó correctamente:
+
+- consulta de roles mediante `SuperAdministrador`;
+- visualización de `Administrador` y `Vendedor`;
+- consulta mediante `Administrador`;
+- visualización exclusiva del rol `Vendedor`;
+- bloqueo de acceso para el rol `Vendedor`.
