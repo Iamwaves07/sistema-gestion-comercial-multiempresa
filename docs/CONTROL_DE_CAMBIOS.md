@@ -1,414 +1,631 @@
-## Control de cambios y alcance del proyecto
+Control de cambios y alcance del proyecto
 
-## Proyecto
+Proyecto
 
-**Sistema de Gestión Comercial Multiempresa para PYMEs**
+Sistema de Gestión Comercial Multiempresa para PYMEs
 
-Este documento registra las funcionalidades, tecnologías y decisiones que forman parte de la versión final del proyecto.
+Última actualización: 31 de julio de 2026.
 
-Un elemento solo se considera implementado cuando ha sido desarrollado, probado, registrado mediante un commit y publicado en GitHub.
+Este documento registra las funcionalidades, tecnologías, decisiones de arquitectura y pruebas que forman parte de la versión actual del proyecto.
 
----
+Una funcionalidad solo se considera terminada cuando ha sido desarrollada, probada, registrada mediante un commit y publicada en GitHub.
 
-## Funcionalidades implementadas y probadas
+Funcionalidades desarrolladas y probadas
 
-### Arquitectura y base de datos
+Arquitectura y base de datos
 
-- Backend desarrollado con Node.js y Express.
-- Base de datos PostgreSQL.
-- Acceso a datos mediante Prisma ORM.
-- Migraciones para la creación y evolución de la base de datos.
-- Arquitectura multiempresa mediante el campo `empresaId`.
-- Separación lógica de los datos pertenecientes a distintas empresas.
-- Conexión entre Express, Prisma y PostgreSQL comprobada.
-- Usuario técnico de PostgreSQL utilizado para la conexión de la aplicación.
+Backend desarrollado con Node.js y Express.
 
-### Modelo de datos
+Base de datos PostgreSQL.
+
+Acceso a datos mediante Prisma ORM.
+
+Migraciones para la creación y evolución de la base de datos.
+
+Arquitectura multiempresa mediante el campo empresaId.
+
+Separación lógica de los datos pertenecientes a distintas empresas.
+
+Conexión entre Express, Prisma y PostgreSQL comprobada.
+
+Uso de variables de entorno para credenciales, configuración del servidor y datos iniciales.
+
+Modelo de datos
 
 El sistema cuenta con las siguientes entidades:
 
-- Empresa.
-- Rol.
-- Usuario.
-- Categoría.
-- Producto.
-- Cliente.
-- Movimiento de inventario.
+Empresa.
 
-Las principales relaciones implementadas son:
+Rol.
 
-- Una empresa puede tener múltiples usuarios.
-- Un rol puede estar asociado a múltiples usuarios.
-- Una empresa puede tener múltiples categorías.
-- Una empresa puede tener múltiples productos.
-- Una categoría puede contener múltiples productos.
-- Una empresa puede tener múltiples clientes.
-- Una empresa puede registrar múltiples movimientos de inventario.
-- Un producto puede tener múltiples movimientos de inventario.
-- Un usuario puede ser responsable de múltiples movimientos de inventario.
+Usuario.
 
-### Datos iniciales
+Categoría.
 
-- Creación de datos iniciales mediante un script `seed`.
-- Creación o actualización de una empresa de demostración.
-- Creación de los roles SuperAdministrador, Administrador y Vendedor.
-- Creación de un usuario Administrador.
-- Creación de un usuario SuperAdministrador.
-- Uso de `upsert` para evitar la duplicación de los datos iniciales.
-- Protección de las contraseñas iniciales mediante bcrypt.
+Producto.
 
-### Autenticación y autorización
+Cliente.
 
-- Contraseñas protegidas mediante bcrypt.
-- Inicio de sesión mediante correo y contraseña.
-- Generación de tokens JWT.
-- Validación de tokens JWT.
-- Configuración de expiración para los tokens.
-- Middleware para proteger rutas privadas.
-- Rechazo de solicitudes sin token.
-- Rechazo de tokens inválidos o expirados.
-- Consulta del usuario autenticado mediante `GET /auth/me`.
-- Validación del estado del usuario, la empresa y el rol.
-- Control de acceso mediante los roles SuperAdministrador, Administrador y Vendedor.
-- Middleware de autorización por roles.
-- Respuesta `403` para usuarios sin permisos suficientes.
+Movimiento de inventario.
+
+Las principales relaciones desarrolladas son:
+
+Una empresa puede tener múltiples usuarios.
+
+Un rol puede estar asociado a múltiples usuarios.
+
+Una empresa puede tener múltiples categorías, productos, clientes y movimientos de inventario.
+
+Una categoría puede contener múltiples productos.
+
+Un producto puede tener múltiples movimientos de inventario.
+
+Un usuario puede ser responsable de múltiples movimientos de inventario.
+
+Datos iniciales
+
+Creación de datos iniciales mediante un script seed.
+
+Creación o actualización de una empresa de demostración.
+
+Creación de los roles SuperAdministrador, Administrador y Vendedor.
+
+Creación de un usuario Administrador y un usuario SuperAdministrador.
+
+Uso de upsert para evitar la duplicación de los datos iniciales.
+
+Protección de las contraseñas iniciales mediante bcrypt.
+
+Lectura y validación de las variables de entorno requeridas por el seed.
+
+Autenticación y autorización
+
+Contraseñas protegidas mediante bcrypt.
+
+Inicio de sesión mediante correo y contraseña.
+
+Normalización del correo antes de la autenticación.
+
+Generación y validación de tokens JWT.
+
+Configuración de expiración para los tokens.
+
+Middleware para proteger rutas privadas.
+
+Rechazo de solicitudes sin token y de tokens inválidos o expirados.
+
+Consulta del usuario autenticado mediante GET /auth/me.
+
+Validación del estado del usuario, la empresa y el rol.
+
+Control de acceso mediante los roles SuperAdministrador, Administrador y Vendedor.
+
+Middleware de autorización por roles.
+
+Respuesta 401 para solicitudes sin autenticación válida.
+
+Respuesta 403 para usuarios autenticados sin permisos suficientes.
 
 La equivalencia entre los actores descritos en el informe y los roles utilizados en el código es la siguiente:
 
-- **SuperAdministrador:** representa al Administrador del sistema.
-- **Administrador:** representa al Administrador de empresa.
-- **Vendedor:** representa al Empleado con funciones comerciales e inventario autorizado.
+SuperAdministrador: representa al Administrador del sistema.
 
-### Categorías
+Administrador: representa al Administrador de empresa.
 
-- Crear categorías.
-- Listar categorías.
-- Consultar una categoría por identificador.
-- Actualizar categorías.
-- Desactivar categorías mediante eliminación lógica.
-- Reactivar categorías.
-- Separar las categorías mediante `empresaId`.
-- Prevenir nombres duplicados dentro de una misma empresa.
-- Validar que el usuario solo consulte o modifique categorías de su empresa.
-- Proteger las operaciones administrativas mediante JWT y autorización por rol.
+Vendedor: representa al Empleado con funciones comerciales e inventario autorizado.
 
-### Productos
+Gestión de empresas
 
-- Crear productos.
-- Listar productos.
-- Consultar un producto por identificador.
-- Actualizar productos.
-- Desactivar productos mediante eliminación lógica.
-- Reactivar productos.
-- Asociar cada producto con una categoría.
-- Validar que el producto y su categoría pertenezcan a la misma empresa.
-- Validar que la categoría se encuentre activa.
-- Controlar precio, stock y stock mínimo.
-- Prevenir nombres de productos duplicados dentro de una empresa.
-- Separar los productos mediante `empresaId`.
-- Proteger las operaciones administrativas mediante JWT y autorización por rol.
+Se desarrolló el módulo de gestión de empresas, disponible exclusivamente para usuarios con rol SuperAdministrador.
 
-### Clientes
+Endpoints desarrollados
 
-- Crear clientes.
-- Listar clientes.
-- Consultar un cliente por identificador.
-- Actualizar clientes.
-- Desactivar clientes mediante eliminación lógica.
-- Reactivar clientes.
-- Validar de forma básica el formato del RUT.
-- Normalizar el RUT eliminando puntos y espacios.
-- Validar el formato del correo electrónico cuando se proporciona.
-- Prevenir RUT duplicados dentro de una misma empresa.
-- Separar los clientes mediante `empresaId`.
-- Proteger las operaciones administrativas mediante JWT y autorización por rol.
+POST /empresas: crear una empresa.
 
-### Inventario
+GET /empresas: listar todas las empresas.
 
-- Registrar movimientos de tipo `ENTRADA`.
-- Registrar movimientos de tipo `SALIDA`.
-- Registrar movimientos de tipo `AJUSTE`.
-- Actualizar automáticamente el stock del producto.
-- Sumar unidades al registrar una entrada.
-- Restar unidades al registrar una salida.
-- Establecer el stock final mediante un ajuste.
-- Prevenir salidas superiores al stock disponible.
-- Impedir que el stock quede en valores negativos.
-- Usar transacciones de Prisma para actualizar el stock y registrar el movimiento de forma conjunta.
-- Revertir la operación completa cuando ocurre un error durante la transacción.
-- Registrar el usuario responsable de cada movimiento.
-- Registrar la empresa asociada al movimiento.
-- Validar que el producto pertenezca a la empresa autenticada.
-- Validar que el producto y su categoría se encuentren activos.
-- Consultar el historial de movimientos por empresa.
-- Ordenar los movimientos desde el más reciente al más antiguo.
-- Consultar un movimiento individual por identificador.
-- Mantener los movimientos como registros históricos sin rutas de edición o eliminación.
+GET /empresas/:id: consultar una empresa por su identificador.
 
-### Endpoints técnicos
+PUT /empresas/:id: actualizar los datos de una empresa.
 
-- `GET /health` para comprobar el funcionamiento de la API.
-- `GET /health/database` para comprobar la conexión con PostgreSQL.
-- Consulta técnica mediante Prisma para verificar la disponibilidad de la base de datos.
+DELETE /empresas/:id: desactivar lógicamente una empresa.
 
-### Herramientas y control de versiones
+PATCH /empresas/:id/reactivar: reactivar una empresa desactivada.
 
-- Pruebas manuales de endpoints mediante PowerShell.
-- Revisión de respuestas HTTP exitosas y de error.
-- Comprobación de rutas protegidas con tokens válidos, ausentes e inválidos.
-- Uso de Prisma Studio para visualizar los datos de manera local.
-- Control de versiones mediante Git.
-- Repositorio público en GitHub.
-- Commits organizados por funcionalidad.
-- Publicación periódica de los avances en la rama principal.
+Validaciones y seguridad
 
----
+Todas las rutas requieren un token JWT válido.
 
-## Elementos técnicos o utilizados para pruebas
+El acceso está restringido al rol SuperAdministrador.
 
-Los siguientes elementos fueron creados para apoyar el desarrollo o comprobar el funcionamiento del sistema:
+Se validan los campos obligatorios, el formato del correo y el formato básico del RUT.
 
-- `GET /auth/admin-check`, utilizado para probar la autorización por roles.
-- `GET /health`, utilizado para comprobar que la API se encuentra activa.
-- `GET /health/database`, utilizado para comprobar la conexión con PostgreSQL.
-- Empresa de demostración utilizada durante el desarrollo.
-- Usuarios Administrador y SuperAdministrador creados mediante el script `seed`.
-- Categorías, productos y clientes ficticios utilizados durante las pruebas.
-- Movimientos de inventario ficticios utilizados para probar entradas, salidas y ajustes.
+Se normaliza el RUT eliminando puntos y espacios.
 
-Estos elementos deberán revisarse antes de la entrega final para decidir cuáles se mantienen como datos o rutas de demostración y cuáles se eliminan.
+Se impide registrar empresas con un RUT duplicado.
 
----
+La eliminación es lógica mediante el campo estado.
 
-## Funcionalidades todavía no implementadas
+Pruebas realizadas
 
-Los siguientes elementos no deben describirse como implementados en el informe hasta que hayan sido desarrollados, probados y publicados en GitHub:
+Se comprobó correctamente:
 
-### Administración del sistema
+creación, listado, consulta, actualización, desactivación y reactivación de empresas;
 
-- CRUD de empresas.
-- CRUD de usuarios.
-- Endpoints para consultar y administrar roles.
-- Administración completa de permisos por rol.
-- Restricción global de las operaciones exclusivas del SuperAdministrador.
+bloqueo de acceso para el rol Administrador mediante respuesta 403;
 
-### Seguridad complementaria
+acceso global permitido para el rol SuperAdministrador.
 
-- Helmet.
-- Configuración formal de CORS.
-- Rate limiting.
-- Manejo centralizado de errores.
-- Manejo de rutas inexistentes.
-- Validaciones centralizadas mediante una biblioteca especializada.
-- Pruebas automatizadas de autenticación, autorización y aislamiento multiempresa.
+La empresa de prueba utilizada fue Comercial Andina Limitada, identificada con el ID 5.
 
-### Frontend
+Gestión de usuarios
 
-- Interfaz frontend desarrollada con React y Vite.
-- Pantalla de inicio de sesión.
-- Panel principal.
-- Menú de navegación.
-- Gestión visual de categorías.
-- Gestión visual de productos.
-- Gestión visual de clientes.
-- Consulta y registro visual de movimientos de inventario.
-- Formularios, tablas y mensajes de validación.
-- Integración completa entre frontend y backend.
+Se desarrolló el módulo de gestión de usuarios con autenticación JWT, separación multiempresa y control de acceso según rol.
 
-### Entrega y despliegue
+Endpoints desarrollados
 
-- Despliegue del backend en un servicio de nube.
-- Despliegue del frontend.
-- Base de datos alojada en un entorno remoto.
-- Configuración de variables de entorno para producción.
-- Documentación técnica final de instalación y ejecución.
-- Pruebas finales de aceptación.
+POST /usuarios: crear un usuario.
 
----
+GET /usuarios: listar usuarios según el alcance del rol autenticado.
 
-## Frontend incluido en el alcance
+GET /usuarios/:id: consultar un usuario por su identificador.
+
+PUT /usuarios/:id: actualizar los datos, empresa, rol o contraseña de un usuario.
+
+DELETE /usuarios/:id: desactivar lógicamente un usuario.
+
+PATCH /usuarios/:id/reactivar: reactivar un usuario desactivado.
+
+Reglas de acceso
+
+SuperAdministrador puede gestionar usuarios con rol Administrador o Vendedor en cualquier empresa activa.
+
+Administrador puede gestionar solamente usuarios con rol Vendedor dentro de su propia empresa.
+
+Vendedor no tiene acceso al módulo de usuarios.
+
+Las cuentas SuperAdministrador no pueden crearse, editarse, desactivarse ni reactivarse mediante estas rutas.
+
+Un Administrador no puede consultar usuarios de otras empresas ni cuentas SuperAdministrador.
+
+Un Administrador no puede trasladar usuarios a otra empresa.
+
+Validaciones y seguridad
+
+Se valida el formato del correo.
+
+La contraseña debe contener al menos ocho caracteres.
+
+Las contraseñas se almacenan mediante hash con bcrypt.
+
+Se impide registrar correos duplicados.
+
+Solo se pueden asignar empresas y roles activos.
+
+La eliminación es lógica mediante el campo estado.
+
+No se permite reactivar usuarios pertenecientes a una empresa inactiva.
+
+Las contraseñas no se incluyen en las respuestas de la API.
+
+Pruebas realizadas
+
+Se comprobó correctamente:
+
+creación, listado, consulta, actualización, desactivación y reactivación de usuarios;
+
+listado global mediante SuperAdministrador;
+
+listado limitado a la empresa del Administrador;
+
+bloqueo al consultar usuarios de otra empresa;
+
+creación permitida de un Vendedor por el Administrador de su empresa;
+
+bloqueo de acceso para el rol Vendedor.
+
+Los usuarios de prueba utilizados pertenecen a Empresa Demo y Comercial Andina Limitada.
+
+Consulta de roles asignables
+
+Se desarrolló GET /roles, que devuelve los roles activos que el usuario autenticado puede asignar.
+
+Reglas de acceso
+
+SuperAdministrador puede consultar los roles Administrador y Vendedor.
+
+Administrador puede consultar solamente el rol Vendedor.
+
+Vendedor no tiene acceso al endpoint.
+
+El rol SuperAdministrador no se muestra como asignable.
+
+Pruebas realizadas
+
+Se comprobó correctamente la respuesta correspondiente para cada uno de los tres roles.
+
+Categorías
+
+Crear, listar, consultar, actualizar, desactivar y reactivar categorías.
+
+Separar las categorías mediante empresaId.
+
+Prevenir nombres duplicados dentro de una misma empresa.
+
+Asignar automáticamente la empresa desde el JWT validado.
+
+Restringir las operaciones administrativas al rol Administrador.
+
+Pruebas realizadas
+
+Listado de categorías por empresa.
+
+Creación de Insumos de oficina, ID 2, para Comercial Andina Limitada.
+
+Asociación automática con empresaId = 5.
+
+Aislamiento respecto de las categorías de Empresa Demo.
+
+Productos
+
+Crear, listar, consultar, actualizar, desactivar y reactivar productos.
+
+Asociar cada producto con una categoría.
+
+Validar que el producto y su categoría pertenezcan a la misma empresa.
+
+Validar que la categoría se encuentre activa.
+
+Controlar precio, stock y stock mínimo.
+
+Prevenir nombres duplicados dentro de una empresa.
+
+Separar los productos mediante empresaId.
+
+Restringir las operaciones administrativas al rol Administrador.
+
+Pruebas realizadas
+
+Listados independientes para Empresa Demo y Comercial Andina Limitada.
+
+Creación de Resma de papel carta, ID 2, asociada a la categoría Insumos de oficina.
+
+Asociación automática con empresaId = 5.
+
+Bloqueo de consulta directa de productos de otra empresa mediante respuesta 404.
+
+Bloqueo de creación de productos para el rol Vendedor mediante respuesta 403.
+
+Clientes
+
+Crear, listar, consultar, actualizar, desactivar y reactivar clientes.
+
+Validar y normalizar el RUT.
+
+Validar el formato del correo cuando se proporciona.
+
+Prevenir RUT duplicados dentro de una misma empresa.
+
+Separar los clientes mediante empresaId.
+
+Asignar automáticamente la empresa desde el JWT validado.
+
+Restringir las operaciones administrativas al rol Administrador.
+
+Pruebas realizadas
+
+Listado independiente de clientes por empresa.
+
+Creación de Distribuidora Los Andes, ID 2, para Comercial Andina Limitada.
+
+Asociación automática con empresaId = 5.
+
+Bloqueo de consulta directa de clientes de otra empresa mediante respuesta 404.
+
+Inventario y movimientos
+
+Registrar movimientos ENTRADA, SALIDA y AJUSTE.
+
+Actualizar automáticamente el stock del producto.
+
+Prevenir salidas superiores al stock disponible.
+
+Impedir que el stock quede en valores negativos.
+
+Usar transacciones de Prisma para actualizar el stock y registrar el movimiento de forma conjunta.
+
+Revertir la operación completa cuando ocurre un error.
+
+Registrar el usuario y la empresa responsables de cada movimiento.
+
+Validar que el producto pertenezca a la empresa autenticada.
+
+Consultar el historial por empresa y un movimiento por identificador.
+
+Mantener los movimientos como registros históricos sin rutas de edición o eliminación.
+
+Permitir el registro de movimientos a Administrador y Vendedor.
+
+Pruebas realizadas
+
+Historial independiente para cada empresa.
+
+Entrada de cinco unidades: stock de 20 a 25.
+
+Salida válida de tres unidades: stock de 25 a 22.
+
+Rechazo de una salida de 30 unidades cuando el stock era 25, mediante respuesta 409.
+
+Conservación del stock y ausencia de un movimiento falso después de la operación rechazada.
+
+Salida de una unidad registrada por el rol Vendedor: stock de 22 a 21.
+
+Registro de la Vendedora Comercial Andina, ID 8, como responsable.
+
+Bloqueo de consulta de movimientos de otra empresa mediante respuesta 404.
+
+Endpoints técnicos
+
+GET /health para comprobar el funcionamiento de la API.
+
+GET /health/database para comprobar la conexión con PostgreSQL.
+
+GET /auth/admin-check para comprobar la autorización del rol Administrador.
+
+Seguridad complementaria
+
+Helmet para agregar encabezados HTTP de seguridad.
+
+Desactivación explícita de X-Powered-By.
+
+CORS restringido mediante FRONTEND_URL, con respaldo local http://localhost:5173.
+
+Restricción de métodos y encabezados permitidos.
+
+Límite de 100kb para solicitudes JSON.
+
+Rate limiting aplicado a POST /auth/login.
+
+Límite de cinco intentos fallidos dentro de quince minutos.
+
+Exclusión de los inicios de sesión correctos del conteo.
+
+Manejo de rutas inexistentes mediante respuesta 404.
+
+Manejo global de errores mediante respuestas JSON uniformes.
+
+Pruebas realizadas
+
+Presencia de encabezados de Helmet.
+
+Ausencia de X-Powered-By.
+
+Cinco intentos fallidos de login con respuesta 401.
+
+Bloqueo del sexto intento mediante respuesta 429.
+
+Mensaje personalizado para exceso de intentos.
+
+Respuesta 404 en formato JSON para rutas inexistentes.
+
+Continuidad de /health y /health/database después de incorporar los middlewares.
+
+Pruebas integrales de autenticación, roles y aislamiento multiempresa
+
+Se realizaron pruebas manuales mediante PowerShell con usuarios de distintos roles y empresas.
+
+Autenticación
+
+Login correcto del Administrador de Empresa Demo.
+
+Login correcto del SuperAdministrador.
+
+Login correcto de la Administradora de Comercial Andina Limitada.
+
+Login correcto de la Vendedora de Comercial Andina Limitada.
+
+Consulta correcta de GET /auth/me.
+
+Rechazo de GET /auth/me sin token mediante respuesta 401.
+
+Acceso correcto del Administrador a GET /auth/admin-check.
+
+Rechazo de tokens inválidos o expirados.
+
+Autorización por rol
+
+El Administrador no puede acceder a la gestión global de empresas.
+
+El SuperAdministrador puede listar todas las empresas.
+
+El Vendedor puede registrar movimientos de inventario.
+
+El Vendedor no puede crear productos.
+
+Los accesos no autorizados responden con estado 403.
+
+Aislamiento multiempresa
+
+Se comprobó que:
+
+cada Administrador lista únicamente usuarios de su empresa;
+
+el SuperAdministrador puede listar usuarios de todas las empresas;
+
+un Administrador no puede consultar usuarios de otra empresa;
+
+cada empresa lista únicamente sus categorías, productos, clientes y movimientos;
+
+los recursos de otra empresa responden como no encontrados.
+
+El aislamiento se realiza utilizando el empresaId incluido en el JWT validado, evitando depender de un identificador enviado libremente por el cliente.
+
+Herramientas y control de versiones
+
+Pruebas manuales mediante PowerShell.
+
+Revisión de respuestas HTTP exitosas y de error.
+
+Uso de Prisma Studio para visualizar los datos localmente.
+
+Control de versiones mediante Git.
+
+Repositorio público en GitHub.
+
+Commits organizados por funcionalidad.
+
+Publicación periódica en la rama principal.
+
+Revisión de git status en cada bloque.
+
+Sincronización comprobada entre main y origin/main.
+
+Elementos técnicos utilizados para pruebas
+
+GET /auth/admin-check.
+
+GET /health.
+
+GET /health/database.
+
+Empresa Demo.
+
+Comercial Andina Limitada.
+
+Usuarios Administrador, SuperAdministrador y Vendedor.
+
+Categorías, productos, clientes y movimientos ficticios.
+
+Estos elementos deberán revisarse antes de la entrega final para decidir cuáles se mantienen como demostración y cuáles se eliminan.
+
+Funcionalidades todavía no desarrolladas
+
+Los siguientes elementos no deben describirse como terminados en el informe hasta que hayan sido desarrollados, probados, registrados mediante commit y publicados en GitHub.
+
+Validaciones y pruebas automatizadas
+
+Validaciones centralizadas mediante una biblioteca especializada.
+
+Pruebas automatizadas de autenticación y autorización.
+
+Pruebas automatizadas de aislamiento multiempresa.
+
+Pruebas automatizadas de categorías, productos, clientes y movimientos.
+
+Configuración de un entorno de pruebas independiente.
+
+Frontend
+
+Interfaz frontend desarrollada con React y Vite.
+
+Pantalla de inicio de sesión.
+
+Panel principal y menú de navegación.
+
+Gestión visual de categorías, productos y clientes.
+
+Consulta y registro visual de movimientos de inventario.
+
+Formularios, tablas y mensajes de validación.
+
+Integración completa entre frontend y backend.
+
+Entrega y despliegue
+
+Despliegue del backend en un servicio de nube.
+
+Despliegue del frontend.
+
+Base de datos alojada en un entorno remoto.
+
+Variables de entorno para producción.
+
+Documentación técnica final de instalación y ejecución.
+
+Pruebas finales de aceptación.
+
+Revisión de datos y endpoints técnicos utilizados durante el desarrollo.
+
+Frontend incluido en el alcance
 
 El proyecto contempla el desarrollo de una interfaz frontend básica y funcional mediante React y Vite.
 
 La interfaz incluirá, como mínimo:
 
-- Inicio de sesión.
-- Panel principal.
-- Gestión visual de categorías.
-- Gestión visual de productos.
-- Gestión visual de clientes.
-- Consulta y registro de movimientos de inventario.
-- Comunicación con los endpoints protegidos del backend.
+inicio de sesión;
 
-El frontend todavía no se encuentra implementado, pero forma parte del alcance definido para el MPV.
+panel principal;
 
-Por esta razón, debe mantenerse dentro de la planificación, los objetivos y la descripción de la solución, pero no debe presentarse como una funcionalidad terminada hasta completar su desarrollo y sus pruebas.
+gestión visual de categorías;
 
----
+gestión visual de productos;
 
-## Decisiones de arquitectura y seguridad
+gestión visual de clientes;
 
-### Separación multiempresa
+consulta y registro de movimientos de inventario;
 
-El `empresaId` utilizado en las operaciones protegidas se obtiene desde el JWT validado y no desde los datos enviados libremente por el usuario.
+comunicación con los endpoints protegidos del backend.
 
-Esto reduce el riesgo de que una persona intente consultar o modificar información perteneciente a otra empresa.
+El frontend todavía no se encuentra terminado, pero forma parte del alcance definido para el MVP. Por esta razón, debe mantenerse dentro de la planificación, los objetivos y la descripción de la solución, pero no debe presentarse como una funcionalidad terminada hasta completar su desarrollo y sus pruebas.
 
-### Eliminación lógica
+Decisiones de arquitectura y seguridad
 
-Las categorías, productos y clientes no se eliminan físicamente de la base de datos.
+Separación multiempresa
 
-La desactivación modifica el campo `estado` de `true` a `false`, permitiendo mantener el historial y reactivar posteriormente los registros.
+El empresaId utilizado en las operaciones protegidas se obtiene desde el JWT validado y no desde los datos enviados libremente por el usuario.
 
-### Movimientos de inventario
+En las consultas individuales se exige que coincidan el identificador del recurso y el empresaId de la sesión. Cuando un recurso pertenece a otra empresa, la API responde como no encontrado, evitando revelar su existencia.
 
-Los movimientos de inventario no cuentan con operaciones de actualización o eliminación, debido a que representan el historial de cambios realizados sobre el stock.
+Eliminación lógica
 
-### SuperAdministrador
+Las empresas, los usuarios, las categorías, los productos y los clientes no se eliminan físicamente. La desactivación modifica el campo estado de true a false, permitiendo mantener el historial y reactivar los registros.
 
-El modelo actual exige que todos los usuarios estén asociados a una empresa mediante `empresaId`.
+Movimientos de inventario
 
-Por esta razón, el usuario SuperAdministrador se encuentra asociado técnicamente a la empresa de demostración. Su acceso global será determinado por su rol y por las reglas de autorización que se implementen en los endpoints de administración del sistema.
+Los movimientos no cuentan con operaciones de actualización o eliminación porque representan el historial del stock. La actualización del producto y la creación del movimiento se realizan dentro de una transacción de Prisma.
 
-Esta decisión deberá revisarse antes de la versión final para confirmar si se mantiene o si se modifica el modelo de datos.
+Roles y permisos
 
-### Variables privadas
+Los permisos actuales están definidos en los middlewares y rutas del backend. Se utilizan tres roles fijos: SuperAdministrador, Administrador y Vendedor.
 
-Las contraseñas, la clave utilizada para firmar JWT y las credenciales de PostgreSQL se almacenan en el archivo privado `.env`.
+No se ha desarrollado una matriz dinámica de permisos. GET /roles permite consultar roles asignables, pero no crearlos ni modificarlos.
 
-El archivo `.env` no se publica en GitHub.
+SuperAdministrador
 
-El archivo `.env.example` contiene únicamente nombres de variables y valores de referencia que permiten conocer la configuración necesaria sin revelar credenciales reales.
+El modelo actual exige que todos los usuarios estén asociados a una empresa mediante empresaId. Por esta razón, el SuperAdministrador se encuentra asociado técnicamente a la empresa de demostración, aunque su acceso global se determina por su rol.
 
----
+Esta decisión deberá revisarse antes de la versión final.
 
-## Regla de actualización
+Variables privadas
+
+Las contraseñas, la clave JWT y las credenciales de PostgreSQL se almacenan en .env, archivo que no se publica en GitHub. .env.example contiene únicamente variables de referencia.
+
+Seguridad HTTP
+
+Helmet agrega encabezados de seguridad. CORS restringe orígenes, métodos y encabezados. El limitador del login reduce intentos de fuerza bruta y el límite de JSON reduce solicitudes excesivamente grandes.
+
+Regla de actualización
 
 Cada nueva funcionalidad deberá seguir este orden:
 
-1. Confirmar que pertenece al alcance final.
-2. Definir los roles autorizados.
-3. Desarrollar la funcionalidad en el código.
-4. Comprobar su sintaxis.
-5. Probar su funcionamiento.
-6. Verificar su aislamiento multiempresa.
-7. Registrar los cambios mediante un commit.
-8. Publicar el commit en GitHub.
-9. Actualizar este documento.
-10. Actualizar las secciones correspondientes del informe.
+Confirmar que pertenece al alcance final.
 
-Una funcionalidad no debe describirse como implementada mientras no haya completado todas las etapas anteriores.
+Definir los roles autorizados.
 
-## Gestión de empresas
+Desarrollar la funcionalidad en el código.
 
-Se desarrolló el módulo de gestión de empresas, disponible exclusivamente para usuarios con rol `SuperAdministrador`.
+Comprobar su sintaxis.
 
-### Endpoints desarrollados
+Probar su funcionamiento.
 
-- `POST /empresas`: crear una empresa.
-- `GET /empresas`: listar todas las empresas.
-- `GET /empresas/:id`: consultar una empresa por su identificador.
-- `PUT /empresas/:id`: actualizar los datos de una empresa.
-- `DELETE /empresas/:id`: desactivar lógicamente una empresa.
-- `PATCH /empresas/:id/reactivar`: reactivar una empresa desactivada.
+Verificar su aislamiento multiempresa.
 
-### Validaciones y seguridad
+Registrar los cambios mediante un commit.
 
-- Todas las rutas requieren un token JWT válido.
-- El acceso está restringido al rol `SuperAdministrador`.
-- Se validan los campos obligatorios, el formato del correo y el formato básico del RUT.
-- Se impide registrar empresas con un RUT duplicado.
-- La eliminación es lógica mediante el campo `estado`, evitando borrar físicamente los registros.
+Publicar el commit en GitHub.
 
-### Pruebas realizadas
+Actualizar este documento.
 
-Se comprobó correctamente:
+Actualizar las secciones correspondientes del informe.
 
-- creación de una empresa;
-- listado general;
-- consulta por ID;
-- actualización de datos;
-- desactivación lógica;
-- reactivación.
-
-La empresa de prueba utilizada fue `Comercial Andina Limitada`, identificada con el ID `5`.
-## Gestión de usuarios
-
-Se desarrolló el módulo de gestión de usuarios con autenticación JWT, separación multiempresa y control de acceso según rol.
-
-### Endpoints desarrollados
-
-- `POST /usuarios`: crear un usuario.
-- `GET /usuarios`: listar usuarios según el alcance del rol autenticado.
-- `GET /usuarios/:id`: consultar un usuario por su identificador.
-- `PUT /usuarios/:id`: actualizar los datos, empresa, rol o contraseña de un usuario.
-- `DELETE /usuarios/:id`: desactivar lógicamente un usuario.
-- `PATCH /usuarios/:id/reactivar`: reactivar un usuario desactivado.
-
-### Reglas de acceso
-
-- `SuperAdministrador` puede gestionar usuarios con rol `Administrador` o `Vendedor` en cualquier empresa activa.
-- `Administrador` puede gestionar solamente usuarios con rol `Vendedor` dentro de su propia empresa.
-- `Vendedor` no tiene acceso al módulo de usuarios.
-- Las cuentas `SuperAdministrador` no pueden crearse, editarse, desactivarse ni reactivarse mediante estas rutas.
-- Un Administrador no puede consultar usuarios de otras empresas ni cuentas SuperAdministrador.
-
-### Validaciones y seguridad
-
-- Todas las rutas requieren un token JWT válido.
-- Se valida el formato del correo.
-- La contraseña debe contener al menos ocho caracteres.
-- Las contraseñas se almacenan mediante hash con `bcrypt`.
-- Se impide registrar correos duplicados.
-- Solo se pueden asignar empresas y roles activos.
-- La eliminación es lógica mediante el campo `estado`.
-- No se permite reactivar usuarios pertenecientes a una empresa inactiva.
-- Las contraseñas no se incluyen en las respuestas de la API.
-
-### Pruebas realizadas
-
-Se comprobó correctamente:
-
-- creación de un Administrador mediante SuperAdministrador;
-- listado general de usuarios mediante SuperAdministrador;
-- consulta individual por ID;
-- actualización sin reemplazar la contraseña;
-- desactivación lógica;
-- reactivación;
-- listado limitado a la empresa del Administrador;
-- bloqueo al intentar crear otro Administrador desde una cuenta Administrador;
-- creación permitida de un Vendedor por el Administrador de su empresa;
-- bloqueo de acceso al módulo de usuarios para el rol Vendedor.
-
-Los usuarios de prueba creados pertenecen a `Comercial Andina Limitada`.
-## Consulta de roles asignables
-
-Se desarrolló el endpoint de consulta de roles disponibles según los permisos del usuario autenticado.
-
-### Endpoint desarrollado
-
-- `GET /roles`: obtiene los roles activos que el usuario puede asignar al crear o actualizar usuarios.
-
-### Reglas de acceso
-
-- `SuperAdministrador` puede consultar los roles `Administrador` y `Vendedor`.
-- `Administrador` puede consultar solamente el rol `Vendedor`.
-- `Vendedor` no tiene acceso al endpoint.
-- El rol `SuperAdministrador` no se muestra como asignable, ya que estas cuentas se administran únicamente mediante el proceso controlado de carga inicial.
-
-### Validaciones y seguridad
-
-- La ruta requiere un token JWT válido.
-- El acceso se controla mediante roles.
-- Solo se devuelven roles activos.
-- La respuesta no permite crear, modificar ni eliminar roles.
-
-### Pruebas realizadas
-
-Se comprobó correctamente:
-
-- consulta de roles mediante `SuperAdministrador`;
-- visualización de `Administrador` y `Vendedor`;
-- consulta mediante `Administrador`;
-- visualización exclusiva del rol `Vendedor`;
-- bloqueo de acceso para el rol `Vendedor`.
+Una funcionalidad no debe describirse como terminada mientras no haya completado todas las etapas anteriores.
