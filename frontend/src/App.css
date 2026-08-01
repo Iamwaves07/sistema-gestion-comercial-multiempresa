@@ -915,3 +915,256 @@ form > label:not(.remember-option) {
     min-width: 760px;
   }
 }
+
+/* =========================================================
+   PÁGINAS PROVISIONALES DE LOS MÓDULOS
+   ========================================================= */
+
+.page-heading {
+  margin-bottom: 28px;
+}
+
+.page-heading h1 {
+  margin: 8px 0 10px;
+  color: #182033;
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+}
+
+.page-heading > div > p:last-child {
+  max-width: 760px;
+  margin: 0;
+  color: #687080;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.module-placeholder-card {
+  min-height: 330px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 48px;
+  border: 1px solid #e2e5e9;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgb(31 41 55 / 7%);
+  text-align: left;
+}
+
+.module-placeholder-icon {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: #94162e;
+  background: #ffe9ec;
+}
+
+.module-placeholder-card h2 {
+  margin: 0 0 10px;
+  color: #1b2232;
+  font-size: 1.45rem;
+  letter-spacing: -0.025em;
+}
+
+.module-placeholder-card p {
+  max-width: 650px;
+  margin: 0;
+  color: #707887;
+  line-height: 1.7;
+}
+
+@media (max-width: 700px) {
+  .module-placeholder-card {
+    min-height: 300px;
+    flex-direction: column;
+    padding: 34px 24px;
+    text-align: center;
+  }
+}
+/* =========================================================
+   MÓDULO DE PRODUCTOS
+   ========================================================= */
+
+.products-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.products-card {
+  overflow: hidden;
+  border: 1px solid #e2e5e9;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgb(31 41 55 / 7%);
+}
+
+.products-toolbar {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eceef1;
+}
+
+.products-summary {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.products-summary-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #98162f;
+  background: #ffe9ec;
+}
+
+.products-summary > div:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.products-summary span {
+  color: #737b88;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.products-summary strong {
+  color: #1d2432;
+  font-size: 1.35rem;
+}
+
+.products-search {
+  width: min(100%, 390px);
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #dfe2e7;
+  border-radius: 12px;
+  color: #7b8390;
+  background: #fafafa;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.products-search:focus-within {
+  border-color: #99172f;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgb(153 23 47 / 10%);
+}
+
+.products-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #252b36;
+  background: transparent;
+}
+
+.products-search input::placeholder {
+  color: #9ca2ac;
+}
+
+.products-loading {
+  min-height: 300px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: #747c89;
+}
+
+.products-table th,
+.products-table td {
+  padding: 17px 22px;
+}
+
+.product-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-name-cell strong {
+  color: #242a35;
+}
+
+.product-table-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #92162d;
+  background: #fff0f2;
+}
+
+.stock-status,
+.product-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.stock-status-ok {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.stock-status-low {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.product-status-active {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.product-status-inactive {
+  color: #5f6672;
+  background: #e9ebef;
+}
+
+@media (max-width: 760px) {
+  .products-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .products-search {
+    width: 100%;
+    max-width: none;
+  }
+
+  .products-table {
+    min-width: 900px;
+  }
+}

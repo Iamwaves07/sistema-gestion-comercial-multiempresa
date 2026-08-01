@@ -9,15 +9,26 @@ import {
 import AppLayout from "../components/AppLayout";
 import { apiRequest } from "../services/api";
 
-function DashboardPage({ sesion, onLogout }) {
+function DashboardPage({
+  sesion,
+  onLogout,
+  onNavigate,
+}) {
   const [resumen, setResumen] = useState({
     totalProductos: 0,
     productosStockBajo: 0,
     totalClientes: 0,
     movimientosMes: 0,
   });
-const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
-const [productosConStockBajo, setProductosConStockBajo] = useState([]);
+
+  const [ultimosMovimientos, setUltimosMovimientos] =
+    useState([]);
+
+  const [
+    productosConStockBajo,
+    setProductosConStockBajo,
+  ] = useState([]);
+
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -87,11 +98,17 @@ const [productosConStockBajo, setProductosConStockBajo] = useState([]);
             );
           },
         );
-setUltimosMovimientos(movimientos.slice(0, 5));
-setProductosConStockBajo(productosStockBajo);
+
+        setUltimosMovimientos(movimientos.slice(0, 5));
+
+        setProductosConStockBajo(
+          productosStockBajo,
+        );
+
         setResumen({
           totalProductos: productos.length,
-          productosStockBajo: productosStockBajo.length,
+          productosStockBajo:
+            productosStockBajo.length,
           totalClientes: clientes.length,
           movimientosMes: movimientosMes.length,
         });
@@ -115,7 +132,12 @@ setProductosConStockBajo(productosStockBajo);
 
   const mostrarValor = (valor) => {
     if (cargando) {
-      return <LoaderCircle className="spinner" size={25} />;
+      return (
+        <LoaderCircle
+          className="spinner"
+          size={25}
+        />
+      );
     }
 
     return valor;
@@ -126,16 +148,22 @@ setProductosConStockBajo(productosStockBajo);
       sesion={sesion}
       onLogout={onLogout}
       activeSection="inicio"
+      onNavigate={onNavigate}
     >
       <section className="dashboard-heading">
         <div>
-          <p className="page-eyebrow">Resumen comercial</p>
+          <p className="page-eyebrow">
+            Resumen comercial
+          </p>
 
           <h1>Panel principal</h1>
 
           <p>
             Revisa la información general de{" "}
-            <strong>{sesion.empresa?.nombre}</strong>.
+            <strong>
+              {sesion.empresa?.nombre}
+            </strong>
+            .
           </p>
         </div>
 
@@ -143,6 +171,9 @@ setProductosConStockBajo(productosStockBajo);
           <button
             type="button"
             className="dashboard-primary-button"
+            onClick={() =>
+              onNavigate("movimientos")
+            }
           >
             <ArrowLeftRight size={19} />
             Registrar movimiento
@@ -151,7 +182,10 @@ setProductosConStockBajo(productosStockBajo);
       </section>
 
       {error && (
-        <div className="error-message" role="alert">
+        <div
+          className="error-message"
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -161,11 +195,14 @@ setProductosConStockBajo(productosStockBajo);
           <div className="empty-dashboard-state">
             <Users size={34} />
 
-            <strong>Panel global del sistema</strong>
+            <strong>
+              Panel global del sistema
+            </strong>
 
             <p>
-              Los indicadores de empresas y usuarios se
-              conectarán en el módulo del SuperAdministrador.
+              Los indicadores de empresas y usuarios
+              se conectarán en el módulo del
+              SuperAdministrador.
             </p>
           </div>
         </section>
@@ -179,9 +216,13 @@ setProductosConStockBajo(productosStockBajo);
 
               <div>
                 <span>Total de productos</span>
+
                 <strong>
-                  {mostrarValor(resumen.totalProductos)}
+                  {mostrarValor(
+                    resumen.totalProductos,
+                  )}
                 </strong>
+
                 <small>
                   Productos registrados en tu empresa
                 </small>
@@ -194,12 +235,16 @@ setProductosConStockBajo(productosStockBajo);
               </div>
 
               <div>
-                <span>Productos con stock bajo</span>
+                <span>
+                  Productos con stock bajo
+                </span>
+
                 <strong>
                   {mostrarValor(
                     resumen.productosStockBajo,
                   )}
                 </strong>
+
                 <small>
                   Stock menor o igual al mínimo
                 </small>
@@ -213,9 +258,13 @@ setProductosConStockBajo(productosStockBajo);
 
               <div>
                 <span>Total de clientes</span>
+
                 <strong>
-                  {mostrarValor(resumen.totalClientes)}
+                  {mostrarValor(
+                    resumen.totalClientes,
+                  )}
                 </strong>
+
                 <small>
                   Clientes registrados en tu empresa
                 </small>
@@ -229,9 +278,13 @@ setProductosConStockBajo(productosStockBajo);
 
               <div>
                 <span>Movimientos del mes</span>
+
                 <strong>
-                  {mostrarValor(resumen.movimientosMes)}
+                  {mostrarValor(
+                    resumen.movimientosMes,
+                  )}
                 </strong>
+
                 <small>
                   Entradas, salidas y ajustes
                 </small>
@@ -248,119 +301,148 @@ setProductosConStockBajo(productosStockBajo);
                   </h2>
 
                   <p>
-                    Entradas, salidas y ajustes registrados
-                    recientemente.
+                    Entradas, salidas y ajustes
+                    registrados recientemente.
                   </p>
                 </div>
               </div>
 
               {ultimosMovimientos.length === 0 ? (
-  <div className="empty-dashboard-state">
-    <ArrowLeftRight size={34} />
+                <div className="empty-dashboard-state">
+                  <ArrowLeftRight size={34} />
 
-    <strong>No hay movimientos registrados</strong>
+                  <strong>
+                    No hay movimientos registrados
+                  </strong>
 
-    <p>
-      Cuando se registren entradas, salidas o ajustes,
-      aparecerán en esta sección.
-    </p>
-  </div>
-) : (
-  <div className="dashboard-table-wrapper">
-    <table className="dashboard-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Producto</th>
-          <th>Tipo</th>
-          <th>Cantidad</th>
-          <th>Usuario responsable</th>
-        </tr>
-      </thead>
+                  <p>
+                    Cuando se registren entradas,
+                    salidas o ajustes, aparecerán en
+                    esta sección.
+                  </p>
+                </div>
+              ) : (
+                <div className="dashboard-table-wrapper">
+                  <table className="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>
+                          Usuario responsable
+                        </th>
+                      </tr>
+                    </thead>
 
-      <tbody>
-        {ultimosMovimientos.map((movimiento) => (
-          <tr key={movimiento.id}>
-            <td>
-              {new Date(
-                movimiento.fechaCreacion,
-              ).toLocaleString("es-CL", {
-                dateStyle: "short",
-                timeStyle: "short",
-              })}
-            </td>
+                    <tbody>
+                      {ultimosMovimientos.map(
+                        (movimiento) => (
+                          <tr key={movimiento.id}>
+                            <td>
+                              {new Date(
+                                movimiento.fechaCreacion,
+                              ).toLocaleString(
+                                "es-CL",
+                                {
+                                  dateStyle:
+                                    "short",
+                                  timeStyle:
+                                    "short",
+                                },
+                              )}
+                            </td>
 
-            <td>{movimiento.producto?.nombre}</td>
+                            <td>
+                              {movimiento.producto
+                                ?.nombre ||
+                                "Producto no disponible"}
+                            </td>
 
-            <td>
-              <span
-                className={`movement-badge movement-${movimiento.tipo.toLowerCase()}`}
-              >
-                {movimiento.tipo}
-              </span>
-            </td>
+                            <td>
+                              <span
+                                className={`movement-badge movement-${movimiento.tipo.toLowerCase()}`}
+                              >
+                                {movimiento.tipo}
+                              </span>
+                            </td>
 
-            <td>{movimiento.cantidad}</td>
+                            <td>
+                              {movimiento.cantidad}
+                            </td>
 
-            <td>
-              {movimiento.usuario?.nombre ||
-                "Usuario no disponible"}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
+                            <td>
+                              {movimiento.usuario
+                                ?.nombre ||
+                                "Usuario no disponible"}
+                            </td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </article>
 
             <article className="dashboard-card">
               <div className="dashboard-card-heading">
                 <div>
-                  <h2>Productos con stock bajo</h2>
+                  <h2>
+                    Productos con stock bajo
+                  </h2>
 
                   <p>
-                    Productos cuyo stock es menor o igual al
-                    mínimo definido.
+                    Productos cuyo stock es menor o
+                    igual al mínimo definido.
                   </p>
                 </div>
               </div>
 
-{productosConStockBajo.length === 0 ? (
-  <div className="empty-dashboard-state">
-    <TriangleAlert size={34} />
+              {productosConStockBajo.length === 0 ? (
+                <div className="empty-dashboard-state">
+                  <TriangleAlert size={34} />
 
-    <strong>No hay productos con stock bajo</strong>
+                  <strong>
+                    No hay productos con stock bajo
+                  </strong>
 
-    <p>
-      Todos los productos se encuentran sobre el stock mínimo
-      definido.
-    </p>
-  </div>
-) : (
-  <div className="low-stock-list">
-    {productosConStockBajo.map((producto) => (
-      <article
-        key={producto.id}
-        className="low-stock-item"
-      >
-        <div>
-          <strong>{producto.nombre}</strong>
+                  <p>
+                    Todos los productos se encuentran
+                    sobre el stock mínimo definido.
+                  </p>
+                </div>
+              ) : (
+                <div className="low-stock-list">
+                  {productosConStockBajo.map(
+                    (producto) => (
+                      <article
+                        key={producto.id}
+                        className="low-stock-item"
+                      >
+                        <div>
+                          <strong>
+                            {producto.nombre}
+                          </strong>
 
-          <span>
-            Stock actual: {producto.stock}
-          </span>
+                          <span>
+                            Stock actual:{" "}
+                            {producto.stock}
+                          </span>
 
-          <span>
-            Stock mínimo: {producto.stockMinimo}
-          </span>
-        </div>
+                          <span>
+                            Stock mínimo:{" "}
+                            {producto.stockMinimo}
+                          </span>
+                        </div>
 
-        <TriangleAlert size={21} />
-      </article>
-    ))}
-  </div>
-)}
+                        <TriangleAlert size={21} />
+                      </article>
+                    ),
+                  )}
+                </div>
+              )}
             </article>
           </section>
         </>

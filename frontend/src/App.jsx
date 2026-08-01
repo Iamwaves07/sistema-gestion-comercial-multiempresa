@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ModulePage from "./pages/ModulePage";
 import "./App.css";
+import ProductsPage from "./pages/ProductsPage";
 
 function obtenerSesionGuardada() {
   const sesionGuardada =
@@ -21,23 +23,107 @@ function obtenerSesionGuardada() {
   }
 }
 
+const modulos = {
+  empresas: {
+    title: "Empresas",
+    description:
+      "Administra las organizaciones registradas en el sistema multiempresa.",
+  },
+
+  usuarios: {
+    title: "Usuarios",
+    description:
+      "Gestiona las cuentas de acceso, sus roles y la empresa asociada.",
+  },
+
+  categorias: {
+    title: "Categorías",
+    description:
+      "Organiza los productos mediante categorías asociadas a la empresa.",
+  },
+
+  productos: {
+    title: "Productos",
+    description:
+      "Consulta y administra el catálogo de productos y sus niveles de inventario.",
+  },
+
+  clientes: {
+    title: "Clientes",
+    description:
+      "Gestiona la información comercial de los clientes de la empresa.",
+  },
+
+  movimientos: {
+    title: "Movimientos",
+    description:
+      "Registra y consulta entradas, salidas y ajustes de inventario.",
+  },
+};
+
 function App() {
   const [sesion, setSesion] = useState(obtenerSesionGuardada);
+  const [seccionActiva, setSeccionActiva] = useState("inicio");
 
-  const cerrarSesion = () => {
+  const iniciarSesion = (datosSesion) => {
+    setSesion(datosSesion);
+    setSeccionActiva("inicio");
+  };
+
+  const cerrarSesion = useCallback(() => {
     localStorage.removeItem("sgcm_sesion");
     sessionStorage.removeItem("sgcm_sesion");
+
     setSesion(null);
+    setSeccionActiva("inicio");
+  }, []);
+
+  const navegarA = (seccion) => {
+    setSeccionActiva(seccion);
   };
 
   if (!sesion) {
-    return <LoginPage onLogin={setSesion} />;
+    return <LoginPage onLogin={iniciarSesion} />;
+  }
+
+  if (seccionActiva === "inicio") {
+    return (
+      <DashboardPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+if (seccionActiva === "productos") {
+  return (
+    <ProductsPage
+      sesion={sesion}
+      onLogout={cerrarSesion}
+      onNavigate={navegarA}
+    />
+  );
+}
+  const moduloSeleccionado = modulos[seccionActiva];
+
+  if (!moduloSeleccionado) {
+    return (
+      <DashboardPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
   }
 
   return (
-    <DashboardPage
+    <ModulePage
       sesion={sesion}
       onLogout={cerrarSesion}
+      activeSection={seccionActiva}
+      onNavigate={navegarA}
+      title={moduloSeleccionado.title}
+      description={moduloSeleccionado.description}
     />
   );
 }
