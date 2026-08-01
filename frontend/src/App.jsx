@@ -1,122 +1,270 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  LogOut,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
+import "./App.css";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [correo, setCorreo] = useState("");
+  const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [recordarSesion, setRecordarSesion] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+const [sesion, setSesion] = useState(() => {
+  const sesionGuardada =
+    localStorage.getItem("sgcm_sesion") ||
+    sessionStorage.getItem("sgcm_sesion");
+
+  if (!sesionGuardada) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(sesionGuardada);
+  } catch {
+    localStorage.removeItem("sgcm_sesion");
+    sessionStorage.removeItem("sgcm_sesion");
+    return null;
+  }
+});
+
+  const iniciarSesion = async (event) => {
+    event.preventDefault();
+    setError("");
+    setCargando(true);
+
+    try {
+      const respuesta = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          correo: correo.trim(),
+          password,
+        }),
+      });
+
+      const resultado = await respuesta.json();
+
+
+      if (!respuesta.ok) {
+        throw new Error(
+          resultado.message || "No fue posible iniciar sesión.",
+        );
+      }
+      const usuario = resultado.data.usuario;
+      const datosSesion = {
+        token: resultado.data.token,
+        usuario,
+        empresa: usuario.empresa,
+        rol: usuario.rol,
+      };
+
+      setSesion(datosSesion);
+
+      if (recordarSesion) {
+        localStorage.setItem("sgcm_sesion", JSON.stringify(datosSesion));
+      } else {
+        sessionStorage.setItem("sgcm_sesion", JSON.stringify(datosSesion));
+      }
+    } catch (errorSolicitud) {
+      if (errorSolicitud instanceof TypeError) {
+        setError(
+          "No fue posible conectar con el servidor. Comprueba que el backend esté funcionando.",
+        );
+      } else {
+        setError(errorSolicitud.message);
+      }
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const cerrarSesion = () => {
+    localStorage.removeItem("sgcm_sesion");
+    sessionStorage.removeItem("sgcm_sesion");
+    setSesion(null);
+    setCorreo("");
+    setPassword("");
+    setError("");
+  };
+
+  if (sesion) {
+    return (
+      <main className="success-page">
+        <section className="success-card">
+          <div className="success-icon">
+            <ShieldCheck size={40} />
+          </div>
+
+          <p className="eyebrow">Autenticación completada</p>
+          <h1>Bienvenida, {sesion.usuario?.nombre}</h1>
+
+          <div className="session-details">
+            <div>
+              <span>Empresa</span>
+              <strong>{sesion.empresa?.nombre}</strong>
+            </div>
+
+            <div>
+              <span>Rol</span>
+              <strong>{sesion.usuario?.rol?.nombre}</strong>
+            </div>
+
+            <div>
+              <span>Correo</span>
+              <strong>{sesion.usuario?.correo}</strong>
+            </div>
+          </div>
+
+          <p className="success-description">
+            El frontend se conectó correctamente con la autenticación JWT del
+            backend.
+          </p>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={cerrarSesion}
+          >
+            <LogOut size={18} />
+            Cerrar sesión
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
+    <main className="login-page">
+      <section className="brand-panel">
+        <div className="brand-content">
+          <div className="brand-logo">
+            <Building2 size={34} />
+          </div>
+
+          <p className="brand-code">SGCM</p>
+
+          <h1>Gestión comercial para empresas que quieren crecer.</h1>
+
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            Centraliza productos, clientes, usuarios y movimientos de
+            inventario en una plataforma segura y multiempresa.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+          <div className="brand-feature">
+            <ShieldCheck size={22} />
+            <span>Acceso protegido mediante JWT y permisos por rol.</span>
+          </div>
         </div>
       </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <section className="form-panel">
+        <div className="login-card">
+          <div className="mobile-logo">
+            <Building2 size={30} />
+          </div>
+
+          <p className="eyebrow">Sistema de Gestión Comercial Multiempresa</p>
+          <h2>Iniciar sesión</h2>
+          <p className="form-description">
+            Ingresa con las credenciales asignadas a tu empresa.
+          </p>
+
+          <form onSubmit={iniciarSesion}>
+            <label htmlFor="correo">Correo electrónico</label>
+
+            <div className="input-wrapper">
+              <Mail size={19} />
+              <input
+                id="correo"
+                type="email"
+                value={correo}
+                onChange={(event) => setCorreo(event.target.value)}
+                placeholder="nombre@empresa.cl"
+                autoComplete="email"
+                required
+              />
+            </div>
+
+            <label htmlFor="password">Contraseña</label>
+
+            <div className="input-wrapper">
+              <LockKeyhole size={19} />
+
+              <input
+                id="password"
+                type={mostrarPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Ingresa tu contraseña"
+                autoComplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                className="password-button"
+                onClick={() => setMostrarPassword((valorActual) => !valorActual)}
+                aria-label={
+                  mostrarPassword
+                    ? "Ocultar contraseña"
+                    : "Mostrar contraseña"
+                }
+              >
+                {mostrarPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </div>
+
+            <label className="remember-option">
+              <input
+                type="checkbox"
+                checked={recordarSesion}
+                onChange={(event) => setRecordarSesion(event.target.checked)}
+              />
+              Recordar sesión en este equipo
+            </label>
+
+            {error && (
+              <div className="error-message" role="alert">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={cargando}
+            >
+              {cargando ? (
+                <>
+                  <LoaderCircle className="spinner" size={19} />
+                  Iniciando sesión...
+                </>
+              ) : (
+                "Iniciar sesión"
+              )}
+            </button>
+          </form>
+
+          <footer>
+            © 2026 Sistema de Gestión Comercial Multiempresa
+          </footer>
+        </div>
+      </section>
+    </main>
+  );
 }
 
-export default App
+export default App;
