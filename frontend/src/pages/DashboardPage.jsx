@@ -1,12 +1,126 @@
+import { useEffect, useState } from "react";
 import {
   ArrowLeftRight,
+  LoaderCircle,
   Package,
   TriangleAlert,
   Users,
 } from "lucide-react";
 import AppLayout from "../components/AppLayout";
+import { apiRequest } from "../services/api";
 
 function DashboardPage({ sesion, onLogout }) {
+  const [resumen, setResumen] = useState({
+    totalProductos: 0,
+    productosStockBajo: 0,
+    totalClientes: 0,
+    movimientosMes: 0,
+  });
+const [ultimosMovimientos, setUltimosMovimientos] = useState([]);
+const [productosConStockBajo, setProductosConStockBajo] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  const nombreRol =
+    sesion.rol?.nombre ||
+    sesion.usuario?.rol?.nombre ||
+    "";
+
+  const esSuperAdministrador =
+    nombreRol === "SuperAdministrador";
+
+  useEffect(() => {
+    const cargarResumen = async () => {
+      setCargando(true);
+      setError("");
+
+      /*
+       * El SuperAdministrador utiliza una vista global distinta.
+       * Sus indicadores se conectarán posteriormente con empresas
+       * y usuarios.
+       */
+      if (esSuperAdministrador) {
+        setCargando(false);
+        return;
+      }
+
+      try {
+        const [
+          resultadoProductos,
+          resultadoClientes,
+          resultadoMovimientos,
+        ] = await Promise.all([
+          apiRequest("/productos"),
+          apiRequest("/clientes"),
+          apiRequest("/movimientos"),
+        ]);
+
+        const productos =
+          resultadoProductos?.data?.productos || [];
+
+        const clientes =
+          resultadoClientes?.data?.clientes || [];
+
+        const movimientos =
+          resultadoMovimientos?.data?.movimientos || [];
+
+        const productosStockBajo = productos.filter(
+          (producto) =>
+            producto.estado &&
+            Number(producto.stock) <=
+              Number(producto.stockMinimo),
+        );
+
+        const fechaActual = new Date();
+
+        const movimientosMes = movimientos.filter(
+          (movimiento) => {
+            const fechaMovimiento = new Date(
+              movimiento.fechaCreacion,
+            );
+
+            return (
+              fechaMovimiento.getMonth() ===
+                fechaActual.getMonth() &&
+              fechaMovimiento.getFullYear() ===
+                fechaActual.getFullYear()
+            );
+          },
+        );
+setUltimosMovimientos(movimientos.slice(0, 5));
+setProductosConStockBajo(productosStockBajo);
+        setResumen({
+          totalProductos: productos.length,
+          productosStockBajo: productosStockBajo.length,
+          totalClientes: clientes.length,
+          movimientosMes: movimientosMes.length,
+        });
+      } catch (errorSolicitud) {
+        if (errorSolicitud.status === 401) {
+          onLogout();
+          return;
+        }
+
+        setError(
+          errorSolicitud.message ||
+            "No fue posible cargar el resumen del panel.",
+        );
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarResumen();
+  }, [esSuperAdministrador, onLogout]);
+
+  const mostrarValor = (valor) => {
+    if (cargando) {
+      return <LoaderCircle className="spinner" size={25} />;
+    }
+
+    return valor;
+  };
+
   return (
     <AppLayout
       sesion={sesion}
@@ -16,113 +130,241 @@ function DashboardPage({ sesion, onLogout }) {
       <section className="dashboard-heading">
         <div>
           <p className="page-eyebrow">Resumen comercial</p>
+
           <h1>Panel principal</h1>
+
           <p>
             Revisa la información general de{" "}
             <strong>{sesion.empresa?.nombre}</strong>.
           </p>
         </div>
 
-        <button type="button" className="dashboard-primary-button">
-          <ArrowLeftRight size={19} />
-          Registrar movimiento
-        </button>
+        {!esSuperAdministrador && (
+          <button
+            type="button"
+            className="dashboard-primary-button"
+          >
+            <ArrowLeftRight size={19} />
+            Registrar movimiento
+          </button>
+        )}
       </section>
 
-      <section className="dashboard-metrics">
-        <article className="metric-card">
-          <div className="metric-icon">
-            <Package size={23} />
-          </div>
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
+        </div>
+      )}
 
-          <div>
-            <span>Total de productos</span>
-            <strong>—</strong>
-            <small>Pendiente de consultar al backend</small>
-          </div>
-        </article>
-
-        <article className="metric-card metric-card-warning">
-          <div className="metric-icon">
-            <TriangleAlert size={23} />
-          </div>
-
-          <div>
-            <span>Productos con stock bajo</span>
-            <strong>—</strong>
-            <small>Pendiente de consultar al backend</small>
-          </div>
-        </article>
-
-        <article className="metric-card">
-          <div className="metric-icon">
-            <Users size={23} />
-          </div>
-
-          <div>
-            <span>Total de clientes</span>
-            <strong>—</strong>
-            <small>Pendiente de consultar al backend</small>
-          </div>
-        </article>
-
-        <article className="metric-card">
-          <div className="metric-icon">
-            <ArrowLeftRight size={23} />
-          </div>
-
-          <div>
-            <span>Movimientos registrados</span>
-            <strong>—</strong>
-            <small>Pendiente de consultar al backend</small>
-          </div>
-        </article>
-      </section>
-
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <div className="dashboard-card-heading">
-            <div>
-              <h2>Últimos movimientos de inventario</h2>
-              <p>
-                Entradas, salidas y ajustes registrados recientemente.
-              </p>
-            </div>
-          </div>
-
+      {esSuperAdministrador ? (
+        <section className="dashboard-card">
           <div className="empty-dashboard-state">
-            <ArrowLeftRight size={34} />
+            <Users size={34} />
 
-            <strong>Datos pendientes de cargar</strong>
+            <strong>Panel global del sistema</strong>
 
             <p>
-              En el siguiente bloque conectaremos esta sección con el endpoint
-              de movimientos del backend.
+              Los indicadores de empresas y usuarios se
+              conectarán en el módulo del SuperAdministrador.
             </p>
           </div>
-        </article>
+        </section>
+      ) : (
+        <>
+          <section className="dashboard-metrics">
+            <article className="metric-card">
+              <div className="metric-icon">
+                <Package size={23} />
+              </div>
 
-        <article className="dashboard-card">
-          <div className="dashboard-card-heading">
-            <div>
-              <h2>Productos con stock bajo</h2>
-              <p>
-                Productos cuyo stock es menor o igual al mínimo definido.
-              </p>
-            </div>
-          </div>
+              <div>
+                <span>Total de productos</span>
+                <strong>
+                  {mostrarValor(resumen.totalProductos)}
+                </strong>
+                <small>
+                  Productos registrados en tu empresa
+                </small>
+              </div>
+            </article>
 
-          <div className="empty-dashboard-state">
-            <TriangleAlert size={34} />
+            <article className="metric-card metric-card-warning">
+              <div className="metric-icon">
+                <TriangleAlert size={23} />
+              </div>
 
-            <strong>Sin información cargada</strong>
+              <div>
+                <span>Productos con stock bajo</span>
+                <strong>
+                  {mostrarValor(
+                    resumen.productosStockBajo,
+                  )}
+                </strong>
+                <small>
+                  Stock menor o igual al mínimo
+                </small>
+              </div>
+            </article>
 
-            <p>
-              Esta sección mostrará automáticamente las alertas de inventario.
-            </p>
-          </div>
-        </article>
-      </section>
+            <article className="metric-card">
+              <div className="metric-icon">
+                <Users size={23} />
+              </div>
+
+              <div>
+                <span>Total de clientes</span>
+                <strong>
+                  {mostrarValor(resumen.totalClientes)}
+                </strong>
+                <small>
+                  Clientes registrados en tu empresa
+                </small>
+              </div>
+            </article>
+
+            <article className="metric-card">
+              <div className="metric-icon">
+                <ArrowLeftRight size={23} />
+              </div>
+
+              <div>
+                <span>Movimientos del mes</span>
+                <strong>
+                  {mostrarValor(resumen.movimientosMes)}
+                </strong>
+                <small>
+                  Entradas, salidas y ajustes
+                </small>
+              </div>
+            </article>
+          </section>
+
+          <section className="dashboard-grid">
+            <article className="dashboard-card">
+              <div className="dashboard-card-heading">
+                <div>
+                  <h2>
+                    Últimos movimientos de inventario
+                  </h2>
+
+                  <p>
+                    Entradas, salidas y ajustes registrados
+                    recientemente.
+                  </p>
+                </div>
+              </div>
+
+              {ultimosMovimientos.length === 0 ? (
+  <div className="empty-dashboard-state">
+    <ArrowLeftRight size={34} />
+
+    <strong>No hay movimientos registrados</strong>
+
+    <p>
+      Cuando se registren entradas, salidas o ajustes,
+      aparecerán en esta sección.
+    </p>
+  </div>
+) : (
+  <div className="dashboard-table-wrapper">
+    <table className="dashboard-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Tipo</th>
+          <th>Cantidad</th>
+          <th>Usuario responsable</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {ultimosMovimientos.map((movimiento) => (
+          <tr key={movimiento.id}>
+            <td>
+              {new Date(
+                movimiento.fechaCreacion,
+              ).toLocaleString("es-CL", {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
+            </td>
+
+            <td>{movimiento.producto?.nombre}</td>
+
+            <td>
+              <span
+                className={`movement-badge movement-${movimiento.tipo.toLowerCase()}`}
+              >
+                {movimiento.tipo}
+              </span>
+            </td>
+
+            <td>{movimiento.cantidad}</td>
+
+            <td>
+              {movimiento.usuario?.nombre ||
+                "Usuario no disponible"}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+            </article>
+
+            <article className="dashboard-card">
+              <div className="dashboard-card-heading">
+                <div>
+                  <h2>Productos con stock bajo</h2>
+
+                  <p>
+                    Productos cuyo stock es menor o igual al
+                    mínimo definido.
+                  </p>
+                </div>
+              </div>
+
+{productosConStockBajo.length === 0 ? (
+  <div className="empty-dashboard-state">
+    <TriangleAlert size={34} />
+
+    <strong>No hay productos con stock bajo</strong>
+
+    <p>
+      Todos los productos se encuentran sobre el stock mínimo
+      definido.
+    </p>
+  </div>
+) : (
+  <div className="low-stock-list">
+    {productosConStockBajo.map((producto) => (
+      <article
+        key={producto.id}
+        className="low-stock-item"
+      >
+        <div>
+          <strong>{producto.nombre}</strong>
+
+          <span>
+            Stock actual: {producto.stock}
+          </span>
+
+          <span>
+            Stock mínimo: {producto.stockMinimo}
+          </span>
+        </div>
+
+        <TriangleAlert size={21} />
+      </article>
+    ))}
+  </div>
+)}
+            </article>
+          </section>
+        </>
+      )}
     </AppLayout>
   );
 }
