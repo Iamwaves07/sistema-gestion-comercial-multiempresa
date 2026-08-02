@@ -6,12 +6,32 @@ import {
 } from "lucide-react";
 
 function ConfirmDialog({
-  producto,
+  producto = null,
+  elemento = null,
+  tipo = "producto",
   procesando,
   onCancelar,
   onConfirmar,
 }) {
-  const estaActivo = producto?.estado;
+  const registro = elemento || producto;
+  const estaActivo = Boolean(registro?.estado);
+  const esCategoria = tipo === "categoría";
+
+  const nombreEntidad = esCategoria
+    ? "categoría"
+    : "producto";
+
+  const gestionEntidad = esCategoria
+    ? "Gestión de categorías"
+    : "Gestión de productos";
+
+  const mensajeDesactivacion = esCategoria
+    ? "La categoría dejará de estar disponible para clasificar nuevos productos, pero su información se conservará."
+    : "El producto dejará de estar disponible para nuevas operaciones, pero su información y movimientos históricos se conservarán.";
+
+  const mensajeReactivacion = esCategoria
+    ? "La categoría volverá a estar disponible para organizar los productos de la empresa."
+    : "El producto volverá a estar disponible para las operaciones de la empresa.";
 
   return (
     <div className="modal-backdrop">
@@ -49,23 +69,23 @@ function ConfirmDialog({
 
         <div className="confirm-dialog-content">
           <p className="page-eyebrow">
-            Gestión de productos
+            {gestionEntidad}
           </p>
 
           <h2 id="confirm-dialog-title">
             {estaActivo
-              ? "¿Desactivar producto?"
-              : "¿Reactivar producto?"}
+              ? `¿Desactivar ${nombreEntidad}?`
+              : `¿Reactivar ${nombreEntidad}?`}
           </h2>
 
           <p>
             {estaActivo
-              ? "El producto dejará de estar disponible para nuevas operaciones, pero su información y movimientos históricos se conservarán."
-              : "El producto volverá a estar disponible para las operaciones de la empresa."}
+              ? mensajeDesactivacion
+              : mensajeReactivacion}
           </p>
 
           <div className="confirm-product-name">
-            {producto?.nombre}
+            {registro?.nombre}
           </div>
         </div>
 
