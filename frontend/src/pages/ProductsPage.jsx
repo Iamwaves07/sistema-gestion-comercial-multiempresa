@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LoaderCircle,
   Package,
+  Plus,
   Search,
   TriangleAlert,
 } from "lucide-react";
 import AppLayout from "../components/AppLayout";
+import ProductForm from "../components/ProductForm";
 import { apiRequest } from "../services/api";
 
 function ProductsPage({
@@ -17,6 +19,17 @@ function ProductsPage({
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [mensajeExito, setMensajeExito] = useState("");
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false);
+
+  const nombreRol =
+    sesion.rol?.nombre ||
+    sesion.usuario?.rol?.nombre ||
+    "";
+
+  const puedeAdministrarProductos =
+    nombreRol === "Administrador";
 
   useEffect(() => {
     const cargarProductos = async () => {
@@ -87,6 +100,45 @@ function ProductsPage({
     };
   };
 
+  const formatearPrecio = (precio) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(Number(precio));
+  };
+
+  const abrirFormulario = () => {
+    setError("");
+    setMensajeExito("");
+    setMostrarFormulario(true);
+  };
+
+  const cerrarFormulario = () => {
+    setMostrarFormulario(false);
+  };
+
+  const manejarProductoCreado = (
+    productoCreado,
+    mensaje,
+  ) => {
+    setProductos((productosActuales) =>
+      [...productosActuales, productoCreado].sort(
+        (productoA, productoB) =>
+          productoA.nombre.localeCompare(
+            productoB.nombre,
+            "es",
+          ),
+      ),
+    );
+
+    setMensajeExito(
+      mensaje || "Producto creado correctamente.",
+    );
+
+    setMostrarFormulario(false);
+  };
+
   return (
     <AppLayout
       sesion={sesion}
@@ -107,7 +159,27 @@ function ProductsPage({
             sus niveles actuales de inventario.
           </p>
         </div>
+
+        {puedeAdministrarProductos && (
+          <button
+            type="button"
+            className="dashboard-primary-button"
+            onClick={abrirFormulario}
+          >
+            <Plus size={19} />
+            Registrar producto
+          </button>
+        )}
       </section>
+
+      {mensajeExito && (
+        <div
+          className="product-success-message"
+          role="status"
+        >
+          {mensajeExito}
+        </div>
+      )}
 
       {error && (
         <div
@@ -178,6 +250,7 @@ function ProductsPage({
                 <tr>
                   <th>Producto</th>
                   <th>Categoría</th>
+                  <th>Precio</th>
                   <th>Stock actual</th>
                   <th>Stock mínimo</th>
                   <th>Estado de stock</th>
@@ -207,6 +280,12 @@ function ProductsPage({
                       <td>
                         {producto.categoria?.nombre ||
                           "Sin categoría"}
+                      </td>
+
+                      <td>
+                        {formatearPrecio(
+                          producto.precio,
+                        )}
                       </td>
 
                       <td>{producto.stock}</td>
@@ -242,6 +321,16 @@ function ProductsPage({
           </div>
         )}
       </section>
+
+      {mostrarFormulario && (
+        <ProductForm
+          onCancelar={cerrarFormulario}
+          onProductoCreado={
+            manejarProductoCreado
+          }
+          onLogout={onLogout}
+        />
+      )}
     </AppLayout>
   );
 }
