@@ -1746,3 +1746,103 @@ form > label:not(.remember-option) {
 .client-address {
   align-items: flex-start;
 }
+/* ===== MÓDULO DE MOVIMIENTOS ===== */
+
+.movements-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.movements-table th,
+.movements-table td {
+  padding: 16px 12px;
+  vertical-align: middle;
+}
+
+.movements-table th:nth-child(1) {
+  width: 10%;
+}
+
+.movements-table th:nth-child(2) {
+  width: 25%;
+}
+
+.movements-table th:nth-child(3) {
+  width: 9%;
+}
+
+.movements-table th:nth-child(4) {
+  width: 20%;
+}
+
+.movements-table th:nth-child(5) {
+  width: 22%;
+}
+
+.movements-table th:nth-child(6) {
+  width: 14%;
+}
+
+.movements-table .product-name-cell > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.movement-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 92px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.movement-type-entry {
+  color: #087443;
+}
+
+.movement-type-exit {
+  color: #b42335;
+}
+
+.movement-type-adjustment {
+  color: #6750a4;
+}
+
+.movement-quantity {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.movement-user {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.movement-user strong {
+  font-size: 0.82rem;
+}
+
+.movement-user small {
+  color: #7a8498;
+  font-size: 0.72rem;
+  word-break: break-word;
+}
+
+.movement-observation {
+  display: block;
+  color: #4f596c;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.movement-date {
+  color: #4f596c;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
