@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LoaderCircle,
   Package,
+  Pencil,
   Plus,
+  Power,
+  PowerOff,
   Search,
   TriangleAlert,
 } from "lucide-react";
 import AppLayout from "../components/AppLayout";
+import ConfirmDialog from "../components/ConfirmDialog";
 import ProductForm from "../components/ProductForm";
 import { apiRequest } from "../services/api";
 
@@ -20,7 +24,17 @@ function ProductsPage({
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [mensajeExito, setMensajeExito] = useState("");
+
   const [mostrarFormulario, setMostrarFormulario] =
+    useState(false);
+
+  const [productoEditar, setProductoEditar] =
+    useState(null);
+
+  const [productoConfirmar, setProductoConfirmar] =
+    useState(null);
+
+  const [procesandoEstado, setProcesandoEstado] =
     useState(false);
 
   const nombreRol =
@@ -108,14 +122,33 @@ function ProductsPage({
     }).format(Number(precio));
   };
 
-  const abrirFormulario = () => {
+  const ordenarProductos = (listaProductos) => {
+    return [...listaProductos].sort(
+      (productoA, productoB) =>
+        productoA.nombre.localeCompare(
+          productoB.nombre,
+          "es",
+        ),
+    );
+  };
+
+  const abrirFormularioCreacion = () => {
     setError("");
     setMensajeExito("");
+    setProductoEditar(null);
+    setMostrarFormulario(true);
+  };
+
+  const abrirFormularioEdicion = (producto) => {
+    setError("");
+    setMensajeExito("");
+    setProductoEditar(producto);
     setMostrarFormulario(true);
   };
 
   const cerrarFormulario = () => {
     setMostrarFormulario(false);
+    setProductoEditar(null);
   };
 
   const manejarProductoCreado = (
@@ -123,20 +156,112 @@ function ProductsPage({
     mensaje,
   ) => {
     setProductos((productosActuales) =>
-      [...productosActuales, productoCreado].sort(
-        (productoA, productoB) =>
-          productoA.nombre.localeCompare(
-            productoB.nombre,
-            "es",
-          ),
-      ),
+      ordenarProductos([
+        ...productosActuales,
+        productoCreado,
+      ]),
     );
 
     setMensajeExito(
       mensaje || "Producto creado correctamente.",
     );
 
-    setMostrarFormulario(false);
+    cerrarFormulario();
+  };
+
+  const manejarProductoActualizado = (
+    productoActualizado,
+    mensaje,
+  ) => {
+    setProductos((productosActuales) =>
+      ordenarProductos(
+        productosActuales.map((producto) =>
+          producto.id === productoActualizado.id
+            ? productoActualizado
+            : producto,
+        ),
+      ),
+    );
+
+    setMensajeExito(
+      mensaje || "Producto actualizado correctamente.",
+    );
+
+    cerrarFormulario();
+  };
+
+  const abrirConfirmacionEstado = (producto) => {
+    setError("");
+    setMensajeExito("");
+    setProductoConfirmar(producto);
+  };
+
+  const cerrarConfirmacionEstado = () => {
+    if (procesandoEstado) {
+      return;
+    }
+
+    setProductoConfirmar(null);
+  };
+
+  const cambiarEstadoProducto = async () => {
+    if (!productoConfirmar) {
+      return;
+    }
+
+    setProcesandoEstado(true);
+    setError("");
+
+    try {
+      const productoEstaActivo =
+        productoConfirmar.estado;
+
+      const endpoint = productoEstaActivo
+        ? `/productos/${productoConfirmar.id}`
+        : `/productos/${productoConfirmar.id}/reactivar`;
+
+      const resultado = await apiRequest(endpoint, {
+        method: productoEstaActivo
+          ? "DELETE"
+          : "PATCH",
+      });
+
+      const productoActualizado =
+        resultado.data.producto;
+
+      setProductos((productosActuales) =>
+        ordenarProductos(
+          productosActuales.map((producto) =>
+            producto.id === productoActualizado.id
+              ? productoActualizado
+              : producto,
+          ),
+        ),
+      );
+
+      setMensajeExito(
+        resultado.message ||
+          (productoEstaActivo
+            ? "Producto desactivado correctamente."
+            : "Producto reactivado correctamente."),
+      );
+
+      setProductoConfirmar(null);
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setError(
+        errorSolicitud.message ||
+          "No fue posible cambiar el estado del producto.",
+      );
+
+      setProductoConfirmar(null);
+    } finally {
+      setProcesandoEstado(false);
+    }
   };
 
   return (
@@ -164,7 +289,7 @@ function ProductsPage({
           <button
             type="button"
             className="dashboard-primary-button"
-            onClick={abrirFormulario}
+            onClick={abrirFormularioCreacion}
           >
             <Plus size={19} />
             Registrar producto
@@ -255,6 +380,10 @@ function ProductsPage({
                   <th>Stock mínimo</th>
                   <th>Estado de stock</th>
                   <th>Estado</th>
+
+                  {puedeAdministrarProductos && (
+                    <th>Acciones</th>
+                  )}
                 </tr>
               </thead>
 
@@ -313,6 +442,57 @@ function ProductsPage({
                             : "Inactivo"}
                         </span>
                       </td>
+
+                      {puedeAdministrarProductos && (
+                        <td>
+                          <div className="product-actions">
+                            <button
+                              type="button"
+                              className="product-edit-button"
+                              onClick={() =>
+                                abrirFormularioEdicion(
+                                  producto,
+                                )
+                              }
+                              aria-label={`Editar ${producto.nombre}`}
+                            >
+                              <Pencil size={17} />
+                              Editar
+                            </button>
+
+                            <button
+                              type="button"
+                              className={
+                                producto.estado
+                                  ? "product-state-button product-state-button-disable"
+                                  : "product-state-button product-state-button-enable"
+                              }
+                              onClick={() =>
+                                abrirConfirmacionEstado(
+                                  producto,
+                                )
+                              }
+                              aria-label={
+                                producto.estado
+                                  ? `Desactivar ${producto.nombre}`
+                                  : `Reactivar ${producto.nombre}`
+                              }
+                            >
+                              {producto.estado ? (
+                                <>
+                                  <PowerOff size={17} />
+                                  Desactivar
+                                </>
+                              ) : (
+                                <>
+                                  <Power size={17} />
+                                  Reactivar
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -324,11 +504,24 @@ function ProductsPage({
 
       {mostrarFormulario && (
         <ProductForm
+          productoEditar={productoEditar}
           onCancelar={cerrarFormulario}
           onProductoCreado={
             manejarProductoCreado
           }
+          onProductoActualizado={
+            manejarProductoActualizado
+          }
           onLogout={onLogout}
+        />
+      )}
+
+      {productoConfirmar && (
+        <ConfirmDialog
+          producto={productoConfirmar}
+          procesando={procesandoEstado}
+          onCancelar={cerrarConfirmacionEstado}
+          onConfirmar={cambiarEstadoProducto}
         />
       )}
     </AppLayout>

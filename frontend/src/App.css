@@ -1399,3 +1399,277 @@ form > label:not(.remember-option) {
     width: 100%;
   }
 }
+/* =========================================================
+   ACCIONES DEL MÓDULO DE PRODUCTOS
+   ========================================================= */
+
+.product-edit-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid #e4b8c0;
+  border-radius: 10px;
+  color: #94162e;
+  background: #fff5f6;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.product-edit-button:hover {
+  color: #ffffff;
+  border-color: #98162f;
+  background: #98162f;
+  transform: translateY(-1px);
+}
+
+.product-edit-button:focus-visible {
+  outline: 3px solid rgb(152 22 47 / 18%);
+  outline-offset: 2px;
+}
+/* =========================================================
+   CAMBIO DE ESTADO Y CONFIRMACIÓN DE PRODUCTOS
+   ========================================================= */
+
+.product-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-state-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.product-state-button:hover {
+  transform: translateY(-1px);
+}
+
+.product-state-button-disable {
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  background: #fff5f5;
+}
+
+.product-state-button-disable:hover {
+  border-color: #dc2626;
+  color: #ffffff;
+  background: #dc2626;
+}
+
+.product-state-button-enable {
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.product-state-button-enable:hover {
+  border-color: #16a34a;
+  color: #ffffff;
+  background: #16a34a;
+}
+
+.product-state-button:focus-visible {
+  outline: 3px solid rgb(15 23 42 / 15%);
+  outline-offset: 2px;
+}
+
+/* Ventana de confirmación */
+
+.confirm-dialog {
+  width: min(100%, 510px);
+  overflow: hidden;
+  border: 1px solid #e1e4e8;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px rgb(15 23 42 / 30%);
+}
+
+.confirm-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 26px 0;
+}
+
+.confirm-dialog-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+}
+
+.confirm-dialog-icon-danger {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.confirm-dialog-icon-success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.confirm-dialog-content {
+  padding: 22px 28px 26px;
+}
+
+.confirm-dialog-content .page-eyebrow {
+  margin-bottom: 8px;
+}
+
+.confirm-dialog-content h2 {
+  margin: 0 0 13px;
+  color: #1b2232;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
+}
+
+.confirm-dialog-content > p:last-of-type {
+  margin: 0;
+  color: #69717f;
+  line-height: 1.65;
+}
+
+.confirm-product-name {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid #e4e7eb;
+  border-radius: 11px;
+  color: #262d39;
+  background: #f8f9fa;
+  font-weight: 800;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px 26px;
+  border-top: 1px solid #eceef1;
+}
+
+.confirm-action-button {
+  min-width: 145px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  color: #ffffff;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.confirm-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.confirm-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.confirm-action-danger {
+  background: #dc2626;
+  box-shadow: 0 12px 24px rgb(220 38 38 / 22%);
+}
+
+.confirm-action-success {
+  background: #16803c;
+  box-shadow: 0 12px 24px rgb(22 128 60 / 22%);
+}
+
+@media (max-width: 760px) {
+  .product-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .product-edit-button,
+  .product-state-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .confirm-dialog-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog-actions .secondary-button,
+  .confirm-action-button {
+    width: 100%;
+  }
+}
+/* =========================================================
+   AJUSTE DE TABLA DE PRODUCTOS SIN DESPLAZAMIENTO HORIZONTAL
+   ========================================================= */
+
+.products-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.products-table th,
+.products-table td {
+  padding: 14px 10px;
+}
+
+.products-table th {
+  font-size: 0.68rem;
+}
+
+.products-table td {
+  font-size: 0.82rem;
+}
+
+.product-name-cell {
+  gap: 9px;
+}
+
+.product-actions {
+  min-width: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.product-edit-button,
+.product-state-button {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  font-size: 0.72rem;
+}

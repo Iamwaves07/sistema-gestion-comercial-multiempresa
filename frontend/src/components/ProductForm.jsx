@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   LoaderCircle,
   PackagePlus,
+  Pencil,
   Save,
   X,
 } from "lucide-react";
@@ -16,10 +17,14 @@ const datosIniciales = {
 };
 
 function ProductForm({
+  productoEditar = null,
   onCancelar,
   onProductoCreado,
+  onProductoActualizado,
   onLogout,
 }) {
+  const esEdicion = Boolean(productoEditar);
+
   const [formulario, setFormulario] =
     useState(datosIniciales);
 
@@ -31,12 +36,33 @@ function ProductForm({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!productoEditar) {
+      setFormulario(datosIniciales);
+      return;
+    }
+
+    setFormulario({
+      nombre: productoEditar.nombre || "",
+      precio: String(productoEditar.precio ?? ""),
+      stock: String(productoEditar.stock ?? 0),
+      stockMinimo: String(
+        productoEditar.stockMinimo ?? 0,
+      ),
+      categoriaId: String(
+        productoEditar.categoria?.id ?? "",
+      ),
+    });
+  }, [productoEditar]);
+
+  useEffect(() => {
     const cargarCategorias = async () => {
       setCargandoCategorias(true);
       setError("");
 
       try {
-        const resultado = await apiRequest("/categorias");
+        const resultado = await apiRequest(
+          "/categorias",
+        );
 
         const categoriasActivas = (
           resultado?.data?.categorias || []
@@ -70,13 +96,39 @@ function ProductForm({
     }));
   };
 
-  const crearProducto = async (evento) => {
+  const guardarProducto = async (evento) => {
     evento.preventDefault();
 
     setGuardando(true);
     setError("");
 
     try {
+      if (esEdicion) {
+        const resultado = await apiRequest(
+          `/productos/${productoEditar.id}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              nombre: formulario.nombre.trim(),
+              precio: Number(formulario.precio),
+              stockMinimo: Number(
+                formulario.stockMinimo,
+              ),
+              categoriaId: Number(
+                formulario.categoriaId,
+              ),
+            }),
+          },
+        );
+
+        onProductoActualizado(
+          resultado.data.producto,
+          resultado.message,
+        );
+
+        return;
+      }
+
       const resultado = await apiRequest("/productos", {
         method: "POST",
         body: JSON.stringify({
@@ -104,7 +156,9 @@ function ProductForm({
 
       setError(
         errorSolicitud.message ||
-          "No fue posible crear el producto.",
+          (esEdicion
+            ? "No fue posible actualizar el producto."
+            : "No fue posible crear el producto."),
       );
     } finally {
       setGuardando(false);
@@ -122,7 +176,11 @@ function ProductForm({
         <header className="product-form-header">
           <div className="product-form-title">
             <div className="product-form-title-icon">
-              <PackagePlus size={24} />
+              {esEdicion ? (
+                <Pencil size={24} />
+              ) : (
+                <PackagePlus size={24} />
+              )}
             </div>
 
             <div>
@@ -131,7 +189,9 @@ function ProductForm({
               </p>
 
               <h2 id="product-form-title">
-                Registrar producto
+                {esEdicion
+                  ? "Editar producto"
+                  : "Registrar producto"}
               </h2>
             </div>
           </div>
@@ -149,7 +209,7 @@ function ProductForm({
 
         <form
           className="product-form"
-          onSubmit={crearProducto}
+          onSubmit={guardarProducto}
         >
           {error && (
             <div
@@ -223,26 +283,35 @@ function ProductForm({
               </select>
             </label>
 
-            <label className="product-form-field">
-              <span>Stock inicial</span>
+            {!esEdicion && (
+              <label className="product-form-field">
+                <span>Stock inicial</span>
 
-              <input
-                type="number"
-                name="stock"
-                value={formulario.stock}
-                onChange={actualizarCampo}
-                min="0"
-                step="1"
-                required
-                disabled={guardando}
-              />
+                <input
+                  type="number"
+                  name="stock"
+                  value={formulario.stock}
+                  onChange={actualizarCampo}
+                  min="0"
+                  step="1"
+                  required
+                  disabled={guardando}
+                />
 
-              <small>
-                Después se modificará mediante movimientos.
-              </small>
-            </label>
+                <small>
+                  Después se modificará mediante
+                  movimientos.
+                </small>
+              </label>
+            )}
 
-            <label className="product-form-field">
+            <label
+              className={
+                esEdicion
+                  ? "product-form-field product-form-field-full"
+                  : "product-form-field"
+              }
+            >
               <span>Stock mínimo</span>
 
               <input
@@ -262,6 +331,15 @@ function ProductForm({
             </label>
           </div>
 
+          {esEdicion && (
+            <div className="product-form-warning">
+              El stock actual no se modifica desde este
+              formulario. Los cambios de inventario deben
+              registrarse mediante entradas, salidas o
+              ajustes.
+            </div>
+          )}
+
           {!cargandoCategorias &&
             categorias.length === 0 && (
               <div
@@ -270,7 +348,7 @@ function ProductForm({
               >
                 No existen categorías activas. Debes
                 registrar o reactivar una categoría antes
-                de crear productos.
+                de guardar el producto.
               </div>
             )}
 
@@ -304,7 +382,10 @@ function ProductForm({
               ) : (
                 <>
                   <Save size={19} />
-                  Guardar producto
+
+                  {esEdicion
+                    ? "Guardar cambios"
+                    : "Guardar producto"}
                 </>
               )}
             </button>
