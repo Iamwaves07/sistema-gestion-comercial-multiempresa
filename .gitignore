@@ -22,3 +22,6 @@ Thumbs.db
 
 # Configuraci√≥n personal de Visual Studio Code
 .vscode/
+
+# Bit·cora local del proyecto
+BITACORA_PROYECTO.md
