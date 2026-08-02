@@ -1673,3 +1673,76 @@ form > label:not(.remember-option) {
   padding: 0 9px;
   font-size: 0.72rem;
 }
+/* ===== MÓDULO DE CLIENTES ===== */
+
+.clients-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.clients-table th,
+.clients-table td {
+  padding: 16px 12px;
+  vertical-align: middle;
+}
+
+.clients-table th:nth-child(1) {
+  width: 25%;
+}
+
+.clients-table th:nth-child(2) {
+  width: 27%;
+}
+
+.clients-table th:nth-child(3) {
+  width: 23%;
+}
+
+.clients-table th:nth-child(4) {
+  width: 10%;
+}
+
+.clients-table th:nth-child(5) {
+  width: 15%;
+}
+
+.clients-table .product-name-cell > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.client-secondary-text {
+  display: block;
+  color: #7a8498;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.client-contact-data {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.client-contact-data span,
+.client-address {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #4f596c;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.client-contact-data svg,
+.client-address svg {
+  flex-shrink: 0;
+  color: #6d7687;
+}
+
+.client-address {
+  align-items: flex-start;
+}

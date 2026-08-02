@@ -5,6 +5,7 @@ import ModulePage from "./pages/ModulePage";
 import "./App.css";
 import ProductsPage from "./pages/ProductsPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import ClientsPage from "./pages/ClientsPage";
 
 function obtenerSesionGuardada() {
   const sesionGuardada =
@@ -108,6 +109,15 @@ if (seccionActiva === "productos") {
 if (seccionActiva === "categorias") {
   return (
     <CategoriesPage
+      sesion={sesion}
+      onLogout={cerrarSesion}
+      onNavigate={navegarA}
+    />
+  );
+}
+if (seccionActiva === "clientes") {
+  return (
+    <ClientsPage
       sesion={sesion}
       onLogout={cerrarSesion}
       onNavigate={navegarA}
