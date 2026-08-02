@@ -1846,3 +1846,138 @@ form > label:not(.remember-option) {
   font-size: 0.78rem;
   white-space: nowrap;
 }
+/* ===== MÓDULO DE USUARIOS ===== */
+
+.users-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.users-table th,
+.users-table td {
+  padding: 16px 14px;
+  vertical-align: middle;
+}
+
+.users-table th:nth-child(1) {
+  width: 36%;
+}
+
+.users-table th:nth-child(2) {
+  width: 18%;
+}
+
+.users-table th:nth-child(3) {
+  width: 15%;
+}
+
+.users-table th:nth-child(4) {
+  width: 11%;
+}
+
+.users-table th:nth-child(5) {
+  width: 20%;
+}
+
+.users-table .product-name-cell > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.user-main-data {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.user-main-data strong {
+  font-size: 0.86rem;
+}
+
+.user-main-data small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7a8498;
+  font-size: 0.75rem;
+  word-break: break-word;
+}
+
+.user-main-data svg {
+  flex-shrink: 0;
+}
+
+.user-company-data {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #4f596c;
+  font-size: 0.82rem;
+}
+
+.user-company-data svg {
+  flex-shrink: 0;
+}
+
+.user-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #4f596c;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.user-role-badge svg {
+  flex-shrink: 0;
+  color: #9f1239;
+}
+
+.user-action-restriction {
+  display: block;
+  color: #7a8498;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+/* Campo de contraseña del formulario de usuarios */
+
+.product-form .password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.product-form .password-input-wrapper input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.product-form .password-toggle-button {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #687386;
+  cursor: pointer;
+}
+
+.product-form .password-toggle-button:hover {
+  background: #f5f6f8;
+  color: #9f1239;
+}
+
+.product-form .password-toggle-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

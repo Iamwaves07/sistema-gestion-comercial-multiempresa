@@ -43,6 +43,15 @@ function ConfirmDialog({
       mensajeReactivacion:
         "El cliente volverá a estar disponible para las operaciones comerciales de la empresa.",
     },
+
+    usuario: {
+      nombre: "usuario",
+      gestion: "Administración de usuarios",
+      mensajeDesactivacion:
+        "El usuario perderá temporalmente el acceso al sistema, pero su información y registros históricos se conservarán.",
+      mensajeReactivacion:
+        "El usuario recuperará el acceso al sistema con su empresa y rol asignados.",
+    },
   };
 
   const configuracion =
