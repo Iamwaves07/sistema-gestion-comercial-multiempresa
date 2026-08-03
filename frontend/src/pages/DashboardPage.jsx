@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeftRight,
+  Building2,
   LoaderCircle,
   Package,
+  ShieldCheck,
   TriangleAlert,
   Users,
 } from "lucide-react";
@@ -20,7 +22,12 @@ function DashboardPage({
     totalClientes: 0,
     movimientosMes: 0,
   });
-
+  const [resumenGlobal, setResumenGlobal] = useState({
+    totalEmpresas: 0,
+    empresasActivas: 0,
+    totalUsuarios: 0,
+    usuariosActivos: 0,
+  });
   const [ultimosMovimientos, setUltimosMovimientos] =
     useState([]);
 
@@ -51,7 +58,45 @@ function DashboardPage({
        * y usuarios.
        */
       if (esSuperAdministrador) {
-        setCargando(false);
+        try {
+          const [
+            resultadoEmpresas,
+            resultadoUsuarios,
+          ] = await Promise.all([
+            apiRequest("/empresas"),
+            apiRequest("/usuarios"),
+          ]);
+
+          const empresas =
+            resultadoEmpresas?.data?.empresas || [];
+
+          const usuarios =
+            resultadoUsuarios?.data?.usuarios || [];
+
+          setResumenGlobal({
+            totalEmpresas: empresas.length,
+            empresasActivas: empresas.filter(
+              (empresa) => empresa.estado,
+            ).length,
+            totalUsuarios: usuarios.length,
+            usuariosActivos: usuarios.filter(
+              (usuario) => usuario.estado,
+            ).length,
+          });
+        } catch (errorSolicitud) {
+          if (errorSolicitud.status === 401) {
+            onLogout();
+            return;
+          }
+
+          setError(
+            errorSolicitud.message ||
+              "No fue posible cargar el resumen global del sistema.",
+          );
+        } finally {
+          setCargando(false);
+        }
+
         return;
       }
 
@@ -152,19 +197,27 @@ function DashboardPage({
     >
       <section className="dashboard-heading">
         <div>
-          <p className="page-eyebrow">
-            Resumen comercial
-          </p>
+<p className="page-eyebrow">
+  {esSuperAdministrador
+    ? "Resumen global"
+    : "Resumen comercial"}
+</p>
 
-          <h1>Panel principal</h1>
+<h1>Panel principal</h1>
 
-          <p>
-            Revisa la información general de{" "}
-            <strong>
-              {sesion.empresa?.nombre}
-            </strong>
-            .
-          </p>
+<p>
+  {esSuperAdministrador ? (
+    "Revisa la información general del sistema multiempresa."
+  ) : (
+    <>
+      Revisa la información general de{" "}
+      <strong>
+        {sesion.empresa?.nombre}
+      </strong>
+      .
+    </>
+  )}
+</p>
         </div>
 
         {!esSuperAdministrador && (
@@ -191,20 +244,86 @@ function DashboardPage({
       )}
 
       {esSuperAdministrador ? (
-        <section className="dashboard-card">
-          <div className="empty-dashboard-state">
-            <Users size={34} />
+        <section className="dashboard-metrics">
+          <article className="metric-card">
+            <div className="metric-icon">
+              <Building2 size={23} />
+            </div>
 
-            <strong>
-              Panel global del sistema
-            </strong>
+            <div>
+              <span>Total de empresas</span>
 
-            <p>
-              Los indicadores de empresas y usuarios
-              se conectarán en el módulo del
-              SuperAdministrador.
-            </p>
-          </div>
+              <strong>
+                {mostrarValor(
+                  resumenGlobal.totalEmpresas,
+                )}
+              </strong>
+
+              <small>
+                Organizaciones registradas
+              </small>
+            </div>
+          </article>
+
+          <article className="metric-card">
+            <div className="metric-icon">
+              <ShieldCheck size={23} />
+            </div>
+
+            <div>
+              <span>Empresas activas</span>
+
+              <strong>
+                {mostrarValor(
+                  resumenGlobal.empresasActivas,
+                )}
+              </strong>
+
+              <small>
+                Empresas habilitadas en el sistema
+              </small>
+            </div>
+          </article>
+
+          <article className="metric-card">
+            <div className="metric-icon">
+              <Users size={23} />
+            </div>
+
+            <div>
+              <span>Total de usuarios</span>
+
+              <strong>
+                {mostrarValor(
+                  resumenGlobal.totalUsuarios,
+                )}
+              </strong>
+
+              <small>
+                Cuentas registradas globalmente
+              </small>
+            </div>
+          </article>
+
+          <article className="metric-card">
+            <div className="metric-icon">
+              <ShieldCheck size={23} />
+            </div>
+
+            <div>
+              <span>Usuarios activos</span>
+
+              <strong>
+                {mostrarValor(
+                  resumenGlobal.usuariosActivos,
+                )}
+              </strong>
+
+              <small>
+                Usuarios habilitados para acceder
+              </small>
+            </div>
+          </article>
         </section>
       ) : (
         <>
