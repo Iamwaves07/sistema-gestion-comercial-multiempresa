@@ -8,6 +8,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 import ClientsPage from "./pages/ClientsPage";
 import MovementsPage from "./pages/MovementsPage";
 import UsersPage from "./pages/UsersPage";
+import CompaniesPage from "./pages/CompaniesPage";
 
 function obtenerSesionGuardada() {
   const sesionGuardada =
@@ -138,6 +139,15 @@ if (seccionActiva === "movimientos") {
 if (seccionActiva === "usuarios") {
   return (
     <UsersPage
+      sesion={sesion}
+      onLogout={cerrarSesion}
+      onNavigate={navegarA}
+    />
+  );
+}
+if (seccionActiva === "empresas") {
+  return (
+    <CompaniesPage
       sesion={sesion}
       onLogout={cerrarSesion}
       onNavigate={navegarA}

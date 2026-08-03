@@ -52,6 +52,14 @@ function ConfirmDialog({
       mensajeReactivacion:
         "El usuario recuperará el acceso al sistema con su empresa y rol asignados.",
     },
+        empresa: {
+      nombre: "empresa",
+      gestion: "Administración multiempresa",
+      mensajeDesactivacion:
+        "La empresa dejará de estar disponible para nuevas operaciones y sus usuarios no podrán acceder al sistema, pero su información se conservará.",
+      mensajeReactivacion:
+        "La empresa volverá a estar disponible junto con sus datos y usuarios asociados.",
+    },
   };
 
   const configuracion =

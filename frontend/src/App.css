@@ -1981,3 +1981,29 @@ form > label:not(.remember-option) {
   cursor: not-allowed;
   opacity: 0.55;
 }
+/* ===== MÓDULO DE EMPRESAS ===== */
+
+.companies-table th:nth-child(1) {
+  width: 30%;
+}
+
+.companies-table th:nth-child(2) {
+  width: 24%;
+}
+
+.companies-table th:nth-child(3) {
+  width: 20%;
+}
+
+.companies-table th:nth-child(4) {
+  width: 10%;
+}
+
+.companies-table th:nth-child(5) {
+  width: 16%;
+}
+
+.companies-table .user-main-data small {
+  word-break: normal;
+  overflow-wrap: break-word;
+}
