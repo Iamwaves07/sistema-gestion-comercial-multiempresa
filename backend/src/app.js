@@ -10,6 +10,7 @@ import usuarioRouter from "./routes/usuario.routes.js";
 import rolRouter from "./routes/rol.routes.js";
 import cors from "cors";
 import helmet from "helmet";
+import cotizacionRouter from "./routes/cotizacion.routes.js";
 
 import { loginLimiter } from "./middlewares/security.middleware.js";
 import {
@@ -67,6 +68,7 @@ app.use("/categorias", categoriaRouter);
 app.use("/productos", productoRouter);
 app.use("/clientes", clienteRouter);
 app.use("/movimientos", movimientoRouter);
+app.use("/cotizaciones", cotizacionRouter);
 app.use("/empresas", empresaRouter);
 app.use("/usuarios", usuarioRouter);
 app.use("/roles", rolRouter);

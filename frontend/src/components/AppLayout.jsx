@@ -4,6 +4,7 @@ import {
   Bell,
   Building2,
   ContactRound,
+  FileText,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -12,7 +13,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-
 function AppLayout({
   sesion,
   onLogout,
@@ -65,6 +65,12 @@ function AppLayout({
       id: "clientes",
       nombre: "Clientes",
       icono: ContactRound,
+      visible: !esSuperAdministrador,
+    },
+        {
+      id: "cotizaciones",
+      nombre: "Cotizaciones",
+      icono: FileText,
       visible: !esSuperAdministrador,
     },
     {
