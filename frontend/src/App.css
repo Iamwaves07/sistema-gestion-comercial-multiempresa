@@ -2390,3 +2390,81 @@ form > label:not(.remember-option) {
     min-width: 900px;
   }
 }
+
+/* =========================================================
+   PRODUCTOS CON STOCK BAJO - DASHBOARD
+   ========================================================= */
+
+.low-stock-list {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.low-stock-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid #f0d5da;
+  border-radius: 14px;
+  background: #fffafb;
+}
+
+.low-stock-item-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.low-stock-item-name {
+  color: #1f2937;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.low-stock-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.low-stock-item-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #778195;
+  font-size: 0.8rem;
+}
+
+.low-stock-item-meta strong {
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.low-stock-item-alert {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #fdecef;
+  color: #a3112f;
+  place-items: center;
+}
+
+@media (max-width: 700px) {
+  .low-stock-item {
+    align-items: flex-start;
+  }
+
+  .low-stock-item-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}git status --short
