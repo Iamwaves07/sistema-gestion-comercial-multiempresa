@@ -228,8 +228,21 @@ model Venta {
   cotizacionId       Int?        @unique
   numero             String
   estado             EstadoVenta @default(CONFIRMADA)
+
+  // Suma de los precios finales de venta.
+  // Los precios de Producto ya incluyen IVA.
   subtotal           Decimal     @db.Decimal(12, 2)
+
+  // Desglose tributario de la venta.
+  // Se mantienen opcionales para conservar compatibilidad
+  // con las ventas históricas creadas antes de v0.20.0.
+  subtotalNeto       Decimal?    @db.Decimal(12, 2)
+  tasaIva            Decimal     @default(19.00) @db.Decimal(5, 2)
+  montoIva           Decimal?    @db.Decimal(12, 2)
+
+  // Total final cobrado al cliente, IVA incluido.
   total              Decimal     @db.Decimal(12, 2)
+
   observacion        String?
   fechaCreacion      DateTime    @default(now())
   fechaActualizacion DateTime    @updatedAt
@@ -252,8 +265,16 @@ model DetalleVenta {
   ventaId        Int
   productoId     Int
   cantidad       Int
+
+  // Precio final unitario del producto, IVA incluido.
   precioUnitario Decimal @db.Decimal(12, 2)
+
+  // Subtotal final de la línea, IVA incluido.
   subtotal       Decimal @db.Decimal(12, 2)
+
+  // Neto histórico de la línea.
+  // Opcional para mantener compatibilidad con ventas previas.
+  subtotalNeto   Decimal? @db.Decimal(12, 2)
 
   venta    Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
   producto Producto @relation(fields: [productoId], references: [id])

@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   LoaderCircle,
+  Plus,
+  Save,
   Search,
   ShoppingCart,
+  Trash2,
   TriangleAlert,
+  X,
   XCircle,
 } from "lucide-react";
 import AppLayout from "../components/AppLayout";
 import { apiRequest } from "../services/api";
+
+const crearDetalleVacio = () => ({
+  productoId: "",
+  cantidad: "1",
+});
 
 function SalesPage({
   sesion,
@@ -23,6 +32,44 @@ function SalesPage({
 
   const [procesandoVenta, setProcesandoVenta] =
     useState(null);
+
+  /*
+   * =========================================================
+   * VENTA DIRECTA
+   * =========================================================
+   */
+
+  const [
+    mostrarVentaDirecta,
+    setMostrarVentaDirecta,
+  ] = useState(false);
+
+  const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
+
+  const [
+    cargandoOpcionesVenta,
+    setCargandoOpcionesVenta,
+  ] = useState(false);
+
+  const [guardandoVenta, setGuardandoVenta] =
+    useState(false);
+
+  const [errorVenta, setErrorVenta] =
+    useState("");
+
+  const [formularioVenta, setFormularioVenta] =
+    useState({
+      clienteId: "",
+      observacion: "",
+      detalles: [crearDetalleVacio()],
+    });
+
+  /*
+   * =========================================================
+   * CARGAR VENTAS
+   * =========================================================
+   */
 
   useEffect(() => {
     const cargarVentas = async () => {
@@ -55,6 +102,12 @@ function SalesPage({
     cargarVentas();
   }, [onLogout]);
 
+  /*
+   * =========================================================
+   * FILTRO
+   * =========================================================
+   */
+
   const ventasFiltradas = useMemo(() => {
     const texto = busqueda
       .trim()
@@ -65,6 +118,19 @@ function SalesPage({
     }
 
     return ventas.filter((venta) => {
+      const origen = venta.cotizacion
+        ? "cotización"
+        : "venta directa";
+
+      const productosVenta =
+        venta.detalles
+          ?.map(
+            (detalle) =>
+              detalle.producto?.nombre,
+          )
+          .filter(Boolean)
+          .join(" ") || "";
+
       const campos = [
         venta.numero,
         venta.estado,
@@ -72,6 +138,8 @@ function SalesPage({
         venta.cliente?.rut,
         venta.usuario?.nombre,
         venta.cotizacion?.numero,
+        origen,
+        productosVenta,
       ];
 
       return campos.some((campo) =>
@@ -81,6 +149,12 @@ function SalesPage({
       );
     });
   }, [busqueda, ventas]);
+
+  /*
+   * =========================================================
+   * FORMATEO
+   * =========================================================
+   */
 
   const formatearPrecio = (valor) => {
     return new Intl.NumberFormat("es-CL", {
@@ -95,15 +169,16 @@ function SalesPage({
       return "Fecha no disponible";
     }
 
-    return new Date(fecha).toLocaleDateString(
-      "es-CL",
-    );
+    return new Date(
+      fecha,
+    ).toLocaleDateString("es-CL");
   };
 
   const obtenerClaseEstado = (estado) => {
     const clases = {
       CONFIRMADA:
         "quote-status quote-status-accepted",
+
       ANULADA:
         "quote-status quote-status-rejected",
     };
@@ -113,6 +188,444 @@ function SalesPage({
       "quote-status quote-status-draft"
     );
   };
+
+  const redondearDinero = (valor) => {
+    return (
+      Math.round(
+        (Number(valor) + Number.EPSILON) *
+          100,
+      ) / 100
+    );
+  };
+
+  /*
+   * =========================================================
+   * ABRIR NUEVA VENTA
+   * =========================================================
+   */
+
+  const abrirVentaDirecta = async () => {
+    setMostrarVentaDirecta(true);
+
+    setFormularioVenta({
+      clienteId: "",
+      observacion: "",
+      detalles: [crearDetalleVacio()],
+    });
+
+    setErrorVenta("");
+    setMensajeExito("");
+    setError("");
+
+    setCargandoOpcionesVenta(true);
+
+    try {
+      const [
+        resultadoClientes,
+        resultadoProductos,
+      ] = await Promise.all([
+        apiRequest("/clientes"),
+        apiRequest("/productos"),
+      ]);
+
+      setClientes(
+        resultadoClientes?.data
+          ?.clientes || [],
+      );
+
+      setProductos(
+        resultadoProductos?.data
+          ?.productos || [],
+      );
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setErrorVenta(
+        errorSolicitud.message ||
+          "No fue posible cargar clientes y productos.",
+      );
+    } finally {
+      setCargandoOpcionesVenta(false);
+    }
+  };
+
+  const cerrarVentaDirecta = () => {
+    if (guardandoVenta) {
+      return;
+    }
+
+    setMostrarVentaDirecta(false);
+    setErrorVenta("");
+
+    setFormularioVenta({
+      clienteId: "",
+      observacion: "",
+      detalles: [crearDetalleVacio()],
+    });
+  };
+
+  /*
+   * =========================================================
+   * OPCIONES DISPONIBLES
+   * =========================================================
+   */
+
+  const clientesDisponibles = useMemo(() => {
+    return clientes.filter(
+      (cliente) => cliente.estado,
+    );
+  }, [clientes]);
+
+  const productosDisponibles = useMemo(() => {
+    return productos.filter(
+      (producto) =>
+        producto.estado &&
+        producto.categoria?.estado !== false,
+    );
+  }, [productos]);
+
+  /*
+   * =========================================================
+   * FORMULARIO VENTA DIRECTA
+   * =========================================================
+   */
+
+  const actualizarCampoVenta = (evento) => {
+    const { name, value } = evento.target;
+
+    setFormularioVenta((actual) => ({
+      ...actual,
+      [name]: value,
+    }));
+
+    setErrorVenta("");
+  };
+
+  const actualizarDetalleVenta = (
+    indice,
+    campo,
+    valor,
+  ) => {
+    setFormularioVenta((actual) => ({
+      ...actual,
+
+      detalles: actual.detalles.map(
+        (detalle, posicion) =>
+          posicion === indice
+            ? {
+                ...detalle,
+                [campo]: valor,
+              }
+            : detalle,
+      ),
+    }));
+
+    setErrorVenta("");
+  };
+
+  const agregarDetalleVenta = () => {
+    setFormularioVenta((actual) => ({
+      ...actual,
+
+      detalles: [
+        ...actual.detalles,
+        crearDetalleVacio(),
+      ],
+    }));
+
+    setErrorVenta("");
+  };
+
+  const eliminarDetalleVenta = (indice) => {
+    if (
+      formularioVenta.detalles.length === 1
+    ) {
+      setErrorVenta(
+        "La venta debe contener al menos un producto.",
+      );
+
+      return;
+    }
+
+    setFormularioVenta((actual) => ({
+      ...actual,
+
+      detalles: actual.detalles.filter(
+        (_, posicion) =>
+          posicion !== indice,
+      ),
+    }));
+
+    setErrorVenta("");
+  };
+
+  const obtenerProducto = (productoId) => {
+    return productosDisponibles.find(
+      (producto) =>
+        producto.id === Number(productoId),
+    );
+  };
+
+  const calcularSubtotalDetalle = (
+    detalle,
+  ) => {
+    const producto = obtenerProducto(
+      detalle.productoId,
+    );
+
+    const cantidad = Number(
+      detalle.cantidad,
+    );
+
+    if (
+      !producto ||
+      !Number.isInteger(cantidad) ||
+      cantidad <= 0
+    ) {
+      return 0;
+    }
+
+    return redondearDinero(
+      Number(producto.precio) * cantidad,
+    );
+  };
+
+  /*
+   * =========================================================
+   * IVA INCLUIDO
+   * =========================================================
+   *
+   * Producto.precio representa el precio final
+   * de venta al público.
+   *
+   * NO sumamos otro 19%.
+   *
+   * Neto = Total / 1,19
+   * IVA  = Total - Neto
+   * =========================================================
+   */
+
+  const totalVentaDirecta = useMemo(() => {
+    return redondearDinero(
+      formularioVenta.detalles.reduce(
+        (total, detalle) =>
+          total +
+          calcularSubtotalDetalle(detalle),
+        0,
+      ),
+    );
+  }, [
+    formularioVenta.detalles,
+    productosDisponibles,
+  ]);
+
+  const subtotalNetoVenta = useMemo(() => {
+    if (totalVentaDirecta <= 0) {
+      return 0;
+    }
+
+    return redondearDinero(
+      totalVentaDirecta / 1.19,
+    );
+  }, [totalVentaDirecta]);
+
+  const montoIvaVenta = useMemo(() => {
+    return redondearDinero(
+      totalVentaDirecta -
+        subtotalNetoVenta,
+    );
+  }, [
+    totalVentaDirecta,
+    subtotalNetoVenta,
+  ]);
+
+  /*
+   * =========================================================
+   * VALIDACIÓN
+   * =========================================================
+   */
+
+  const validarVentaDirecta = () => {
+    const clienteId = Number(
+      formularioVenta.clienteId,
+    );
+
+    if (
+      !Number.isInteger(clienteId) ||
+      clienteId <= 0
+    ) {
+      return "Debes seleccionar un cliente.";
+    }
+
+    if (
+      formularioVenta.detalles.length === 0
+    ) {
+      return "La venta debe contener al menos un producto.";
+    }
+
+    const productosSeleccionados =
+      new Set();
+
+    for (
+      const detalle of
+      formularioVenta.detalles
+    ) {
+      const productoId = Number(
+        detalle.productoId,
+      );
+
+      const cantidad = Number(
+        detalle.cantidad,
+      );
+
+      if (
+        !Number.isInteger(productoId) ||
+        productoId <= 0
+      ) {
+        return "Debes seleccionar un producto válido en cada línea.";
+      }
+
+      if (
+        productosSeleccionados.has(
+          productoId,
+        )
+      ) {
+        return "Un producto no puede aparecer más de una vez en la venta.";
+      }
+
+      productosSeleccionados.add(
+        productoId,
+      );
+
+      if (
+        !Number.isInteger(cantidad) ||
+        cantidad <= 0
+      ) {
+        return "La cantidad debe ser un número entero mayor que cero.";
+      }
+
+      const producto =
+        obtenerProducto(productoId);
+
+      if (!producto) {
+        return "Uno de los productos seleccionados ya no se encuentra disponible.";
+      }
+
+      if (
+        Number(producto.stock) < cantidad
+      ) {
+        return `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}, requerido: ${cantidad}.`;
+      }
+    }
+
+    return "";
+  };
+
+  /*
+   * =========================================================
+   * GUARDAR VENTA DIRECTA
+   * =========================================================
+   */
+
+  const guardarVentaDirecta = async (
+    evento,
+  ) => {
+    evento.preventDefault();
+
+    const mensajeValidacion =
+      validarVentaDirecta();
+
+    if (mensajeValidacion) {
+      setErrorVenta(mensajeValidacion);
+      return;
+    }
+
+    setGuardandoVenta(true);
+    setErrorVenta("");
+
+    try {
+      /*
+       * NO enviamos precio, Neto, IVA ni Total.
+       * El backend obtiene los precios desde
+       * PostgreSQL y calcula los montos.
+       */
+      const datosVenta = {
+        clienteId: Number(
+          formularioVenta.clienteId,
+        ),
+
+        observacion:
+          formularioVenta.observacion.trim() ||
+          null,
+
+        detalles:
+          formularioVenta.detalles.map(
+            (detalle) => ({
+              productoId: Number(
+                detalle.productoId,
+              ),
+
+              cantidad: Number(
+                detalle.cantidad,
+              ),
+            }),
+          ),
+      };
+
+      const resultado = await apiRequest(
+        "/ventas",
+        {
+          method: "POST",
+
+          body: JSON.stringify(
+            datosVenta,
+          ),
+        },
+      );
+
+      const ventaCreada =
+        resultado.data.venta;
+
+      setVentas((actuales) => [
+        ventaCreada,
+        ...actuales,
+      ]);
+
+      setMensajeExito(
+        resultado.message ||
+          "Venta directa registrada correctamente.",
+      );
+
+      setMostrarVentaDirecta(false);
+
+      setFormularioVenta({
+        clienteId: "",
+        observacion: "",
+        detalles: [crearDetalleVacio()],
+      });
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setErrorVenta(
+        errorSolicitud.message ||
+          "No fue posible registrar la venta directa.",
+      );
+    } finally {
+      setGuardandoVenta(false);
+    }
+  };
+
+  /*
+   * =========================================================
+   * ANULAR VENTA
+   * =========================================================
+   */
 
   const anularVenta = async (venta) => {
     const confirmar = window.confirm(
@@ -165,6 +678,12 @@ function SalesPage({
     }
   };
 
+  /*
+   * =========================================================
+   * RENDER
+   * =========================================================
+   */
+
   return (
     <AppLayout
       sesion={sesion}
@@ -181,11 +700,20 @@ function SalesPage({
           <h1>Ventas</h1>
 
           <p>
-            Consulta las ventas generadas desde
-            cotizaciones aceptadas y controla su
-            estado.
+            Registra ventas directas o consulta
+            ventas generadas desde cotizaciones,
+            controlando IVA, inventario y estado.
           </p>
         </div>
+
+        <button
+          type="button"
+          className="dashboard-primary-button"
+          onClick={abrirVentaDirecta}
+        >
+          <Plus size={19} />
+          Nueva venta
+        </button>
       </section>
 
       {mensajeExito && (
@@ -214,7 +742,9 @@ function SalesPage({
             </div>
 
             <div>
-              <span>Ventas registradas</span>
+              <span>
+                Ventas registradas
+              </span>
 
               <strong>
                 {ventas.length}
@@ -233,7 +763,7 @@ function SalesPage({
                   evento.target.value,
                 )
               }
-              placeholder="Buscar por venta, cliente, RUT, cotización o estado"
+              placeholder="Buscar por venta, cliente, producto, cotización, origen o estado"
               aria-label="Buscar ventas"
             />
           </label>
@@ -260,8 +790,8 @@ function SalesPage({
 
             <p>
               {ventas.length === 0
-                ? "Las cotizaciones aceptadas que sean convertidas aparecerán como ventas en esta sección."
-                : "Prueba utilizando otro número de venta, cliente, RUT, cotización o estado."}
+                ? "Las ventas directas y las cotizaciones convertidas aparecerán en esta sección."
+                : "Prueba utilizando otro número de venta, cliente, producto, cotización, origen o estado."}
             </p>
           </div>
         ) : (
@@ -272,7 +802,9 @@ function SalesPage({
                   <th>Venta</th>
                   <th>Cliente</th>
                   <th>Origen</th>
+                  <th>Productos vendidos</th>
                   <th>Fecha</th>
+                  <th>IVA</th>
                   <th>Total</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -330,12 +862,78 @@ function SalesPage({
 
                       <td>
                         <div className="user-main-data">
+                          {venta.detalles?.length >
+                          0 ? (
+                            venta.detalles.map(
+                              (detalle) => (
+                                <div
+                                  key={
+                                    detalle.id
+                                  }
+                                >
+                                  <strong>
+                                    {detalle
+                                      .producto
+                                      ?.nombre ||
+                                      "Producto no disponible"}
+                                  </strong>
+
+                                  <small>
+                                    {
+                                      detalle.cantidad
+                                    }{" "}
+                                    {detalle.cantidad ===
+                                    1
+                                      ? "unidad"
+                                      : "unidades"}{" "}
+                                    ×{" "}
+                                    {formatearPrecio(
+                                      detalle.precioUnitario,
+                                    )}
+                                  </small>
+                                </div>
+                              ),
+                            )
+                          ) : (
+                            <small>
+                              Sin detalle de
+                              productos
+                            </small>
+                          )}
+                        </div>
+                      </td>
+
+                      <td>
+                        <div className="user-main-data">
                           <small>
                             {formatearFecha(
                               venta.fechaCreacion,
                             )}
                           </small>
                         </div>
+                      </td>
+
+                      <td>
+                        {venta.montoIva != null ? (
+                          <div className="user-main-data">
+                            <strong>
+                              {formatearPrecio(
+                                venta.montoIva,
+                              )}
+                            </strong>
+
+                            <small>
+                              Neto:{" "}
+                              {formatearPrecio(
+                                venta.subtotalNeto,
+                              )}
+                            </small>
+                          </div>
+                        ) : (
+                          <small>
+                            Venta histórica
+                          </small>
+                        )}
                       </td>
 
                       <td>
@@ -402,6 +1000,443 @@ function SalesPage({
           </div>
         )}
       </section>
+
+      {mostrarVentaDirecta && (
+        <div className="modal-backdrop">
+          <section
+            className="product-form-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="direct-sale-title"
+          >
+            <header className="product-form-header">
+              <div className="product-form-title">
+                <div className="product-form-title-icon">
+                  <ShoppingCart size={24} />
+                </div>
+
+                <div>
+                  <p className="page-eyebrow">
+                    Venta en tienda
+                  </p>
+
+                  <h2 id="direct-sale-title">
+                    Nueva venta
+                  </h2>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="product-form-close"
+                onClick={
+                  cerrarVentaDirecta
+                }
+                disabled={
+                  guardandoVenta
+                }
+                aria-label="Cerrar formulario"
+              >
+                <X size={21} />
+              </button>
+            </header>
+
+            <form
+              className="product-form"
+              onSubmit={
+                guardarVentaDirecta
+              }
+            >
+              {errorVenta && (
+                <div
+                  className="error-message"
+                  role="alert"
+                >
+                  {errorVenta}
+                </div>
+              )}
+
+              {cargandoOpcionesVenta ? (
+                <div className="products-loading">
+                  <LoaderCircle
+                    className="spinner"
+                    size={34}
+                  />
+
+                  <p>
+                    Cargando clientes y
+                    productos...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="product-form-grid">
+                    <label className="product-form-field product-form-field-full">
+                      <span>Cliente</span>
+
+                      <select
+                        name="clienteId"
+                        value={
+                          formularioVenta.clienteId
+                        }
+                        onChange={
+                          actualizarCampoVenta
+                        }
+                        required
+                        disabled={
+                          guardandoVenta
+                        }
+                      >
+                        <option value="">
+                          Selecciona un
+                          cliente
+                        </option>
+
+                        {clientesDisponibles.map(
+                          (cliente) => (
+                            <option
+                              key={
+                                cliente.id
+                              }
+                              value={
+                                cliente.id
+                              }
+                            >
+                              {
+                                cliente.nombre
+                              }{" "}
+                              — {cliente.rut}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="product-form-field product-form-field-full">
+                      <span>
+                        Observación
+                      </span>
+
+                      <textarea
+                        name="observacion"
+                        value={
+                          formularioVenta.observacion
+                        }
+                        onChange={
+                          actualizarCampoVenta
+                        }
+                        rows="3"
+                        placeholder="Ejemplo: Venta realizada en tienda"
+                        disabled={
+                          guardandoVenta
+                        }
+                      />
+
+                      <small>
+                        Campo opcional.
+                      </small>
+                    </label>
+                  </div>
+
+                  <div className="purchase-order-products-heading">
+                    <div>
+                      <strong>
+                        Productos de la
+                        venta
+                      </strong>
+
+                      <small>
+                        El precio se obtiene
+                        directamente del
+                        catálogo.
+                      </small>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={
+                        agregarDetalleVenta
+                      }
+                      disabled={
+                        guardandoVenta
+                      }
+                    >
+                      <Plus size={17} />
+                      Agregar producto
+                    </button>
+                  </div>
+
+                  <div className="purchase-order-details">
+                    {formularioVenta.detalles.map(
+                      (
+                        detalle,
+                        indice,
+                      ) => {
+                        const producto =
+                          obtenerProducto(
+                            detalle.productoId,
+                          );
+
+                        const subtotalLinea =
+                          calcularSubtotalDetalle(
+                            detalle,
+                          );
+
+                        return (
+                          <article
+                            className="purchase-order-detail"
+                            key={
+                              indice
+                            }
+                          >
+                            <div className="product-form-grid">
+                              <label className="product-form-field product-form-field-full">
+                                <span>
+                                  Producto{" "}
+                                  {indice +
+                                    1}
+                                </span>
+
+                                <select
+                                  value={
+                                    detalle.productoId
+                                  }
+                                  onChange={(
+                                    evento,
+                                  ) =>
+                                    actualizarDetalleVenta(
+                                      indice,
+                                      "productoId",
+                                      evento
+                                        .target
+                                        .value,
+                                    )
+                                  }
+                                  required
+                                  disabled={
+                                    guardandoVenta
+                                  }
+                                >
+                                  <option value="">
+                                    Selecciona
+                                    un producto
+                                  </option>
+
+                                  {productosDisponibles.map(
+                                    (
+                                      productoOpcion,
+                                    ) => (
+                                      <option
+                                        key={
+                                          productoOpcion.id
+                                        }
+                                        value={
+                                          productoOpcion.id
+                                        }
+                                      >
+                                        {
+                                          productoOpcion.nombre
+                                        }{" "}
+                                        —{" "}
+                                        {formatearPrecio(
+                                          productoOpcion.precio,
+                                        )}{" "}
+                                        — Stock:{" "}
+                                        {
+                                          productoOpcion.stock
+                                        }
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              </label>
+
+                              <label className="product-form-field">
+                                <span>
+                                  Cantidad
+                                </span>
+
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={
+                                    detalle.cantidad
+                                  }
+                                  onChange={(
+                                    evento,
+                                  ) =>
+                                    actualizarDetalleVenta(
+                                      indice,
+                                      "cantidad",
+                                      evento
+                                        .target
+                                        .value,
+                                    )
+                                  }
+                                  required
+                                  disabled={
+                                    guardandoVenta
+                                  }
+                                />
+                              </label>
+
+                              <label className="product-form-field">
+                                <span>
+                                  Precio
+                                  unitario
+                                </span>
+
+                                <input
+                                  type="text"
+                                  value={
+                                    producto
+                                      ? formatearPrecio(
+                                          producto.precio,
+                                        )
+                                      : "$0"
+                                  }
+                                  readOnly
+                                />
+
+                                <small>
+                                  IVA incluido.
+                                </small>
+                              </label>
+                            </div>
+
+                            <div className="purchase-order-detail-footer">
+                              <span>
+                                Subtotal:{" "}
+                                <strong>
+                                  {formatearPrecio(
+                                    subtotalLinea,
+                                  )}
+                                </strong>
+                              </span>
+
+                              <button
+                                type="button"
+                                className="product-state-button product-state-button-danger"
+                                onClick={() =>
+                                  eliminarDetalleVenta(
+                                    indice,
+                                  )
+                                }
+                                disabled={
+                                  guardandoVenta ||
+                                  formularioVenta
+                                    .detalles
+                                    .length ===
+                                    1
+                                }
+                              >
+                                <Trash2
+                                  size={16}
+                                />
+                                Quitar
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  <section className="purchase-order-totals">
+                    <div>
+                      <span>Neto</span>
+
+                      <strong>
+                        {formatearPrecio(
+                          subtotalNetoVenta,
+                        )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        IVA 19%
+                      </span>
+
+                      <strong>
+                        {formatearPrecio(
+                          montoIvaVenta,
+                        )}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Total</span>
+
+                      <strong>
+                        {formatearPrecio(
+                          totalVentaDirecta,
+                        )}
+                      </strong>
+                    </div>
+
+                    <small>
+                      Los precios del
+                      catálogo ya incluyen
+                      IVA. El sistema
+                      desglosa el Neto y el
+                      IVA sin aumentar el
+                      precio final. Los
+                      valores definitivos se
+                      calculan nuevamente en
+                      el backend.
+                    </small>
+                  </section>
+
+                  <footer className="product-form-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={
+                        cerrarVentaDirecta
+                      }
+                      disabled={
+                        guardandoVenta
+                      }
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="dashboard-primary-button"
+                      disabled={
+                        guardandoVenta ||
+                        clientesDisponibles.length ===
+                          0 ||
+                        productosDisponibles.length ===
+                          0
+                      }
+                    >
+                      {guardandoVenta ? (
+                        <>
+                          <LoaderCircle
+                            className="spinner"
+                            size={19}
+                          />
+                          Confirmando...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={19} />
+                          Confirmar venta
+                        </>
+                      )}
+                    </button>
+                  </footer>
+                </>
+              )}
+            </form>
+          </section>
+        </div>
+      )}
     </AppLayout>
   );
 }
