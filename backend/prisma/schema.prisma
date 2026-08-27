@@ -26,6 +26,13 @@ enum EstadoVenta {
   ANULADA
 }
 
+enum EstadoOrdenCompra {
+  BORRADOR
+  EMITIDA
+  RECIBIDA
+  ANULADA
+}
+
 model Empresa {
   id        Int     @id @default(autoincrement())
   nombre    String
@@ -35,14 +42,15 @@ model Empresa {
   direccion String?
   estado    Boolean @default(true)
 
-  usuarios     Usuario[]
-  categorias   Categoria[]
-  productos    Producto[]
-  clientes     Cliente[]
-  movimientos  MovimientoInventario[]
-  cotizaciones Cotizacion[]
-  ventas       Venta[]
-  proveedores Proveedor[]
+  usuarios      Usuario[]
+  categorias    Categoria[]
+  productos     Producto[]
+  clientes      Cliente[]
+  movimientos   MovimientoInventario[]
+  cotizaciones  Cotizacion[]
+  ventas        Venta[]
+  proveedores   Proveedor[]
+  ordenesCompra OrdenCompra[]
 }
 
 model Rol {
@@ -63,12 +71,12 @@ model Usuario {
   password  String
   estado    Boolean @default(true)
 
-  empresa      Empresa                @relation(fields: [empresaId], references: [id])
-  rol          Rol                    @relation(fields: [rolId], references: [id])
-  movimientos  MovimientoInventario[]
-  cotizaciones Cotizacion[]
-  ventas       Venta[]
-  
+  empresa       Empresa                @relation(fields: [empresaId], references: [id])
+  rol           Rol                    @relation(fields: [rolId], references: [id])
+  movimientos   MovimientoInventario[]
+  cotizaciones  Cotizacion[]
+  ventas        Venta[]
+  ordenesCompra OrdenCompra[]
 
   @@index([empresaId])
   @@index([rolId])
@@ -98,11 +106,12 @@ model Producto {
   stockMinimo Int     @default(0)
   estado      Boolean @default(true)
 
-  empresa            Empresa                @relation(fields: [empresaId], references: [id])
-  categoria          Categoria              @relation(fields: [categoriaId], references: [id])
-  movimientos        MovimientoInventario[]
-  detallesCotizacion DetalleCotizacion[]
-  detallesVenta      DetalleVenta[]
+  empresa             Empresa                @relation(fields: [empresaId], references: [id])
+  categoria           Categoria              @relation(fields: [categoriaId], references: [id])
+  movimientos         MovimientoInventario[]
+  detallesCotizacion  DetalleCotizacion[]
+  detallesVenta       DetalleVenta[]
+  detallesOrdenCompra DetalleOrdenCompra[]
 
   @@index([empresaId])
   @@index([categoriaId])
@@ -126,26 +135,47 @@ model Cliente {
   @@index([empresaId])
 }
 
+model Proveedor {
+  id          Int     @id @default(autoincrement())
+  empresaId   Int
+  razonSocial String
+  rut         String
+  giro        String?
+  correo      String?
+  telefono    String?
+  direccion   String?
+  estado      Boolean @default(true)
+
+  empresa       Empresa       @relation(fields: [empresaId], references: [id])
+  ordenesCompra OrdenCompra[]
+
+  @@unique([empresaId, rut])
+  @@index([empresaId])
+}
+
 model MovimientoInventario {
   id            Int                      @id @default(autoincrement())
   empresaId     Int
   productoId    Int
   usuarioId     Int
   ventaId       Int?
+  ordenCompraId Int?
   tipo          TipoMovimientoInventario
   cantidad      Int
   observacion   String?
   fechaCreacion DateTime                 @default(now())
 
-  empresa  Empresa  @relation(fields: [empresaId], references: [id])
-  producto Producto @relation(fields: [productoId], references: [id])
-  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
-  venta    Venta?   @relation(fields: [ventaId], references: [id])
+  empresa     Empresa      @relation(fields: [empresaId], references: [id])
+  producto    Producto     @relation(fields: [productoId], references: [id])
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id])
+  venta       Venta?       @relation(fields: [ventaId], references: [id])
+  ordenCompra OrdenCompra? @relation(fields: [ordenCompraId], references: [id])
 
   @@index([empresaId, fechaCreacion])
   @@index([productoId])
   @@index([usuarioId])
   @@index([ventaId])
+  @@index([ordenCompraId])
 }
 
 model Cotizacion {
@@ -233,19 +263,47 @@ model DetalleVenta {
   @@index([productoId])
 }
 
-model Proveedor {
-  id          Int     @id @default(autoincrement())
-  empresaId   Int
-  razonSocial String
-  rut         String
-  giro        String?
-  correo      String?
-  telefono    String?
-  direccion   String?
-  estado      Boolean @default(true)
+model OrdenCompra {
+  id                 Int               @id @default(autoincrement())
+  empresaId          Int
+  proveedorId        Int
+  usuarioId          Int
+  numero             String
+  estado             EstadoOrdenCompra @default(BORRADOR)
+  observacion        String?
+  subtotalNeto       Decimal           @db.Decimal(12, 2)
+  tasaIva            Decimal           @default(19.00) @db.Decimal(5, 2)
+  montoIva           Decimal           @db.Decimal(12, 2)
+  total              Decimal           @db.Decimal(12, 2)
+  fechaCreacion      DateTime          @default(now())
+  fechaEmision       DateTime?
+  fechaRecepcion     DateTime?
+  fechaActualizacion DateTime          @updatedAt
 
-  empresa Empresa @relation(fields: [empresaId], references: [id])
+  empresa     Empresa                @relation(fields: [empresaId], references: [id])
+  proveedor   Proveedor              @relation(fields: [proveedorId], references: [id])
+  usuario     Usuario                @relation(fields: [usuarioId], references: [id])
+  detalles    DetalleOrdenCompra[]
+  movimientos MovimientoInventario[]
 
-  @@unique([empresaId, rut])
-  @@index([empresaId])
+  @@unique([empresaId, numero])
+  @@index([empresaId, fechaCreacion])
+  @@index([proveedorId])
+  @@index([usuarioId])
+}
+
+model DetalleOrdenCompra {
+  id                Int     @id @default(autoincrement())
+  ordenCompraId     Int
+  productoId        Int
+  cantidad          Int
+  costoUnitarioNeto Decimal @db.Decimal(12, 2)
+  subtotalNeto      Decimal @db.Decimal(12, 2)
+
+  ordenCompra OrdenCompra @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  producto    Producto    @relation(fields: [productoId], references: [id])
+
+  @@unique([ordenCompraId, productoId])
+  @@index([ordenCompraId])
+  @@index([productoId])
 }

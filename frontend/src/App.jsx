@@ -11,6 +11,7 @@ import CompaniesPage from "./pages/CompaniesPage";
 import QuotesPage from "./pages/QuotesPage";
 import SalesPage from "./pages/SalesPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import PurchaseOrdersPage from "./pages/PurchaseOrdersPage";
 import "./App.css";
 
 function obtenerSesionGuardada() {
@@ -145,6 +146,16 @@ function App() {
   if (seccionActiva === "proveedores") {
     return (
       <SuppliersPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "ordenes-compra") {
+    return (
+      <PurchaseOrdersPage
         sesion={sesion}
         onLogout={cerrarSesion}
         onNavigate={navegarA}

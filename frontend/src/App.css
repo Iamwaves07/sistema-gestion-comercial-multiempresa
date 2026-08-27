@@ -2468,3 +2468,354 @@ form > label:not(.remember-option) {
     gap: 4px;
   }
 }
+
+/* =========================================================
+   ÓRDENES DE COMPRA
+   ========================================================= */
+
+.purchase-orders-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.purchase-order-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.purchase-order-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.purchase-order-card-header p {
+  margin: 0.4rem 0 0.2rem;
+  font-weight: 600;
+}
+
+.purchase-order-card-header small {
+  color: #64748b;
+}
+
+.purchase-order-number-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.purchase-order-number-row > strong {
+  font-size: 1.05rem;
+}
+
+.purchase-order-total-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.purchase-order-total-main span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.purchase-order-total-main strong {
+  font-size: 1.25rem;
+}
+
+.purchase-order-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.purchase-order-summary > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.purchase-order-summary span {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.purchase-order-summary strong {
+  font-size: 0.92rem;
+}
+
+.purchase-order-items {
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.purchase-order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+}
+
+.purchase-order-item + .purchase-order-item {
+  border-top: 1px solid #f1f5f9;
+}
+
+.purchase-order-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.purchase-order-item small {
+  color: #64748b;
+}
+
+.purchase-order-observation {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.purchase-order-observation span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.purchase-order-observation p {
+  margin: 0.35rem 0 0;
+}
+
+.purchase-order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.25rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.purchase-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.purchase-order-products-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.purchase-order-products-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.purchase-order-products-heading small {
+  color: #64748b;
+}
+
+.purchase-order-details {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.purchase-order-detail {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.purchase-order-detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.purchase-order-totals {
+  margin-left: auto;
+  width: min(100%, 380px);
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.purchase-order-totals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.purchase-order-totals > div + div {
+  border-top: 1px solid #e5e7eb;
+}
+
+.purchase-order-totals > div:last-of-type {
+  font-size: 1.08rem;
+  background: #f8fafc;
+}
+
+.purchase-order-totals small {
+  display: block;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid #e5e7eb;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .purchase-order-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .purchase-order-card-header {
+    flex-direction: column;
+  }
+
+  .purchase-order-total-main {
+    align-items: flex-start;
+  }
+
+  .purchase-order-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-order-products-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .purchase-order-detail-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .purchase-order-actions {
+    justify-content: stretch;
+  }
+
+  .purchase-order-actions button {
+    flex: 1 1 auto;
+  }
+}
+
+/* =========================================================
+   AJUSTE VISUAL - ÓRDENES DE COMPRA
+   ========================================================= */
+
+.purchase-orders-toolbar {
+  margin-top: 1.4rem;
+  margin-bottom: 0;
+  padding: 1rem 1.15rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.purchase-orders-toolbar .products-search {
+  flex: 1;
+  max-width: 520px;
+}
+
+.purchase-orders-toolbar .products-count {
+  padding: 0.45rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purchase-orders-empty {
+  min-height: 280px;
+  margin: 0;
+  padding: 3rem 1.5rem;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(166, 20, 55, 0.055),
+      transparent 45%
+    ),
+    #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-top: 1px solid #f1f5f9;
+  border-radius: 0 0 16px 16px;
+
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+}
+
+.purchase-orders-empty svg {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  box-sizing: content-box;
+
+  border-radius: 16px;
+  background: rgba(166, 20, 55, 0.08);
+}
+
+.purchase-orders-empty strong {
+  margin-top: 0.4rem;
+  font-size: 1.05rem;
+}
+
+.purchase-orders-empty p {
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .purchase-orders-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .purchase-orders-toolbar .products-search {
+    width: 100%;
+    max-width: none;
+  }
+
+  .purchase-orders-toolbar .products-count {
+    align-self: flex-start;
+  }
+
+  .purchase-orders-empty {
+    min-height: 240px;
+    padding: 2.4rem 1.2rem;
+  }
+}
+.purchase-order-actions .product-state-button {
+  width: auto;
+  flex: 0 0 auto;
+}

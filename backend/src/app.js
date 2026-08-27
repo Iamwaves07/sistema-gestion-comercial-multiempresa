@@ -13,6 +13,7 @@ import helmet from "helmet";
 import cotizacionRouter from "./routes/cotizacion.routes.js";
 import ventaRouter from "./routes/venta.routes.js";
 import proveedorRouter from "./routes/proveedor.routes.js";
+import ordenCompraRouter from "./routes/ordenCompra.routes.js";
 
 import { loginLimiter } from "./middlewares/security.middleware.js";
 import {
@@ -76,6 +77,7 @@ app.use("/usuarios", usuarioRouter);
 app.use("/roles", rolRouter);
 app.use("/ventas", ventaRouter);
 app.use("/proveedores", proveedorRouter);
+app.use("/ordenes-compra", ordenCompraRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

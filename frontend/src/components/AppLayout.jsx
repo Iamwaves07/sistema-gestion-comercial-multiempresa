@@ -3,6 +3,7 @@ import {
   ArrowLeftRight,
   Bell,
   Building2,
+  ClipboardList,
   ContactRound,
   FileText,
   LayoutDashboard,
@@ -11,8 +12,9 @@ import {
   Package,
   ShoppingCart,
   Tags,
+  Truck,
   Users,
-  X,Truck,
+  X,
 } from "lucide-react";
 
 function AppLayout({
@@ -78,7 +80,13 @@ function AppLayout({
       nombre: "Proveedores",
       icono: Truck,
       visible: !esSuperAdministrador,
-    },  
+    },
+    {
+      id: "ordenes-compra",
+      nombre: "Órdenes de compra",
+      icono: ClipboardList,
+      visible: esAdministrador,
+    },
     {
       id: "cotizaciones",
       nombre: "Cotizaciones",
@@ -152,6 +160,7 @@ function AppLayout({
         >
           {opcionesMenu.map((opcion) => {
             const Icono = opcion.icono;
+
             const estaActiva =
               activeSection === opcion.id;
 
