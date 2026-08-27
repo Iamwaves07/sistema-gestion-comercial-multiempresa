@@ -44,6 +44,15 @@ function ConfirmDialog({
         "El cliente volverá a estar disponible para las operaciones comerciales de la empresa.",
     },
 
+    proveedor: {
+      nombre: "proveedor",
+      gestion: "Gestión de proveedores",
+      mensajeDesactivacion:
+        "El proveedor dejará de estar disponible para nuevas órdenes de compra, pero su información y registros históricos se conservarán.",
+      mensajeReactivacion:
+        "El proveedor volverá a estar disponible para nuevas operaciones de compra de la empresa.",
+    },
+
     usuario: {
       nombre: "usuario",
       gestion: "Administración de usuarios",
@@ -52,7 +61,8 @@ function ConfirmDialog({
       mensajeReactivacion:
         "El usuario recuperará el acceso al sistema con su empresa y rol asignados.",
     },
-        empresa: {
+
+    empresa: {
       nombre: "empresa",
       gestion: "Administración multiempresa",
       mensajeDesactivacion:
@@ -65,6 +75,11 @@ function ConfirmDialog({
   const configuracion =
     configuraciones[tipo] ||
     configuraciones.producto;
+
+  const nombreRegistro =
+    registro?.nombre ||
+    registro?.razonSocial ||
+    "Registro seleccionado";
 
   return (
     <div className="modal-backdrop">
@@ -118,7 +133,7 @@ function ConfirmDialog({
           </p>
 
           <div className="confirm-product-name">
-            {registro?.nombre}
+            {nombreRegistro}
           </div>
         </div>
 

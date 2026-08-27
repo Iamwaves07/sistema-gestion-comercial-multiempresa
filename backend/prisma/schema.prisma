@@ -42,6 +42,7 @@ model Empresa {
   movimientos  MovimientoInventario[]
   cotizaciones Cotizacion[]
   ventas       Venta[]
+  proveedores Proveedor[]
 }
 
 model Rol {
@@ -67,6 +68,7 @@ model Usuario {
   movimientos  MovimientoInventario[]
   cotizaciones Cotizacion[]
   ventas       Venta[]
+  
 
   @@index([empresaId])
   @@index([rolId])
@@ -229,4 +231,21 @@ model DetalleVenta {
   @@unique([ventaId, productoId])
   @@index([ventaId])
   @@index([productoId])
+}
+
+model Proveedor {
+  id          Int     @id @default(autoincrement())
+  empresaId   Int
+  razonSocial String
+  rut         String
+  giro        String?
+  correo      String?
+  telefono    String?
+  direccion   String?
+  estado      Boolean @default(true)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, rut])
+  @@index([empresaId])
 }

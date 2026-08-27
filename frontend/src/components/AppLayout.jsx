@@ -12,7 +12,7 @@ import {
   ShoppingCart,
   Tags,
   Users,
-  X,
+  X,Truck,
 } from "lucide-react";
 
 function AppLayout({
@@ -73,6 +73,12 @@ function AppLayout({
       icono: ContactRound,
       visible: !esSuperAdministrador,
     },
+    {
+      id: "proveedores",
+      nombre: "Proveedores",
+      icono: Truck,
+      visible: !esSuperAdministrador,
+    },  
     {
       id: "cotizaciones",
       nombre: "Cotizaciones",
