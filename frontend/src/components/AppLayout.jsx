@@ -9,10 +9,12 @@ import {
   LogOut,
   Menu,
   Package,
+  ShoppingCart,
   Tags,
   Users,
   X,
 } from "lucide-react";
+
 function AppLayout({
   sesion,
   onLogout,
@@ -27,8 +29,11 @@ function AppLayout({
     sesion.usuario?.rol?.nombre ||
     "";
 
-  const esSuperAdministrador = nombreRol === "SuperAdministrador";
-  const esAdministrador = nombreRol === "Administrador";
+  const esSuperAdministrador =
+    nombreRol === "SuperAdministrador";
+
+  const esAdministrador =
+    nombreRol === "Administrador";
 
   const opcionesMenu = [
     {
@@ -47,7 +52,8 @@ function AppLayout({
       id: "usuarios",
       nombre: "Usuarios",
       icono: Users,
-      visible: esSuperAdministrador || esAdministrador,
+      visible:
+        esSuperAdministrador || esAdministrador,
     },
     {
       id: "categorias",
@@ -67,10 +73,16 @@ function AppLayout({
       icono: ContactRound,
       visible: !esSuperAdministrador,
     },
-        {
+    {
       id: "cotizaciones",
       nombre: "Cotizaciones",
       icono: FileText,
+      visible: !esSuperAdministrador,
+    },
+    {
+      id: "ventas",
+      nombre: "Ventas",
+      icono: ShoppingCart,
       visible: !esSuperAdministrador,
     },
     {
@@ -92,12 +104,18 @@ function AppLayout({
         <button
           type="button"
           className="sidebar-overlay"
-          onClick={() => setMenuAbierto(false)}
+          onClick={() =>
+            setMenuAbierto(false)
+          }
           aria-label="Cerrar menú"
         />
       )}
 
-      <aside className={`sidebar ${menuAbierto ? "sidebar-open" : ""}`}>
+      <aside
+        className={`sidebar ${
+          menuAbierto ? "sidebar-open" : ""
+        }`}
+      >
         <div className="sidebar-brand">
           <div className="sidebar-logo">
             <Building2 size={25} />
@@ -105,32 +123,44 @@ function AppLayout({
 
           <div>
             <strong>SGCM</strong>
-            <span>Gestión Comercial Multiempresa</span>
+            <span>
+              Gestión Comercial Multiempresa
+            </span>
           </div>
 
           <button
             type="button"
             className="sidebar-close"
-            onClick={() => setMenuAbierto(false)}
+            onClick={() =>
+              setMenuAbierto(false)
+            }
             aria-label="Cerrar menú"
           >
             <X size={21} />
           </button>
         </div>
 
-        <nav className="sidebar-navigation" aria-label="Navegación principal">
+        <nav
+          className="sidebar-navigation"
+          aria-label="Navegación principal"
+        >
           {opcionesMenu.map((opcion) => {
             const Icono = opcion.icono;
-            const estaActiva = activeSection === opcion.id;
+            const estaActiva =
+              activeSection === opcion.id;
 
             return (
               <button
                 key={opcion.id}
                 type="button"
                 className={`sidebar-link ${
-                  estaActiva ? "sidebar-link-active" : ""
+                  estaActiva
+                    ? "sidebar-link-active"
+                    : ""
                 }`}
-                onClick={() => navegar(opcion.id)}
+                onClick={() =>
+                  navegar(opcion.id)
+                }
               >
                 <Icono size={20} />
                 <span>{opcion.nombre}</span>
@@ -154,7 +184,9 @@ function AppLayout({
           <button
             type="button"
             className="mobile-menu-button"
-            onClick={() => setMenuAbierto(true)}
+            onClick={() =>
+              setMenuAbierto(true)
+            }
             aria-label="Abrir menú"
           >
             <Menu size={23} />
@@ -172,19 +204,27 @@ function AppLayout({
 
           <div className="topbar-user">
             <div className="user-avatar">
-              {sesion.usuario?.nombre?.charAt(0)?.toUpperCase() || "U"}
+              {sesion.usuario?.nombre
+                ?.charAt(0)
+                ?.toUpperCase() || "U"}
             </div>
 
             <div className="user-information">
-              <strong>{sesion.usuario?.nombre}</strong>
+              <strong>
+                {sesion.usuario?.nombre}
+              </strong>
+
               <span>
-                {sesion.empresa?.nombre} · {nombreRol}
+                {sesion.empresa?.nombre} ·{" "}
+                {nombreRol}
               </span>
             </div>
           </div>
         </header>
 
-        <main className="page-content">{children}</main>
+        <main className="page-content">
+          {children}
+        </main>
       </div>
     </div>
   );

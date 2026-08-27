@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ModulePage from "./pages/ModulePage";
-import "./App.css";
 import ProductsPage from "./pages/ProductsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ClientsPage from "./pages/ClientsPage";
@@ -10,6 +9,8 @@ import MovementsPage from "./pages/MovementsPage";
 import UsersPage from "./pages/UsersPage";
 import CompaniesPage from "./pages/CompaniesPage";
 import QuotesPage from "./pages/QuotesPage";
+import SalesPage from "./pages/SalesPage";
+import "./App.css";
 
 function obtenerSesionGuardada() {
   const sesionGuardada =
@@ -68,8 +69,12 @@ const modulos = {
 };
 
 function App() {
-  const [sesion, setSesion] = useState(obtenerSesionGuardada);
-  const [seccionActiva, setSeccionActiva] = useState("inicio");
+  const [sesion, setSesion] = useState(
+    obtenerSesionGuardada,
+  );
+
+  const [seccionActiva, setSeccionActiva] =
+    useState("inicio");
 
   const iniciarSesion = (datosSesion) => {
     setSesion(datosSesion);
@@ -89,7 +94,11 @@ function App() {
   };
 
   if (!sesion) {
-    return <LoginPage onLogin={iniciarSesion} />;
+    return (
+      <LoginPage
+        onLogin={iniciarSesion}
+      />
+    );
   }
 
   if (seccionActiva === "inicio") {
@@ -101,70 +110,89 @@ function App() {
       />
     );
   }
-if (seccionActiva === "productos") {
-  return (
-    <ProductsPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "categorias") {
-  return (
-    <CategoriesPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "clientes") {
-  return (
-    <ClientsPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "movimientos") {
-  return (
-    <MovementsPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "cotizaciones") {
-  return (
-    <QuotesPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "usuarios") {
-  return (
-    <UsersPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-if (seccionActiva === "empresas") {
-  return (
-    <CompaniesPage
-      sesion={sesion}
-      onLogout={cerrarSesion}
-      onNavigate={navegarA}
-    />
-  );
-}
-  const moduloSeleccionado = modulos[seccionActiva];
+
+  if (seccionActiva === "productos") {
+    return (
+      <ProductsPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "categorias") {
+    return (
+      <CategoriesPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "clientes") {
+    return (
+      <ClientsPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "cotizaciones") {
+    return (
+      <QuotesPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "ventas") {
+    return (
+      <SalesPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "movimientos") {
+    return (
+      <MovementsPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "usuarios") {
+    return (
+      <UsersPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  if (seccionActiva === "empresas") {
+    return (
+      <CompaniesPage
+        sesion={sesion}
+        onLogout={cerrarSesion}
+        onNavigate={navegarA}
+      />
+    );
+  }
+
+  const moduloSeleccionado =
+    modulos[seccionActiva];
 
   if (!moduloSeleccionado) {
     return (
@@ -183,7 +211,9 @@ if (seccionActiva === "empresas") {
       activeSection={seccionActiva}
       onNavigate={navegarA}
       title={moduloSeleccionado.title}
-      description={moduloSeleccionado.description}
+      description={
+        moduloSeleccionado.description
+      }
     />
   );
 }

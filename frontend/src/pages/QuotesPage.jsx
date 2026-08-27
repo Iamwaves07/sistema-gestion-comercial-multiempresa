@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   Send,
+  ShoppingCart,
   TriangleAlert,
   XCircle,
 } from "lucide-react";
@@ -34,6 +35,9 @@ function QuotesPage({
     useState(null);
 
   const [procesandoEstado, setProcesandoEstado] =
+    useState(null);
+
+  const [procesandoVenta, setProcesandoVenta] =
     useState(null);
 
   useEffect(() => {
@@ -217,10 +221,67 @@ function QuotesPage({
     }
   };
 
+  const convertirEnVenta = async (cotizacion) => {
+    const confirmar = window.confirm(
+      `¿Deseas convertir ${cotizacion.numero} en una venta?\n\nSe validará el stock y, si todo está correcto, los productos serán descontados del inventario.`,
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setProcesandoVenta(cotizacion.id);
+    setError("");
+    setMensajeExito("");
+
+    try {
+      const resultado = await apiRequest(
+        `/ventas/desde-cotizacion/${cotizacion.id}`,
+        {
+          method: "POST",
+        },
+      );
+
+      const venta = resultado?.data?.venta;
+
+      setCotizaciones((actuales) =>
+        actuales.map((actual) =>
+          actual.id === cotizacion.id
+            ? {
+                ...actual,
+                estado: "CONVERTIDA",
+              }
+            : actual,
+        ),
+      );
+
+      setMensajeExito(
+        venta?.numero
+          ? `${cotizacion.numero} fue convertida correctamente en ${venta.numero}.`
+          : resultado.message ||
+              "Cotización convertida en venta correctamente.",
+      );
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setError(
+        errorSolicitud.message ||
+          "No fue posible convertir la cotización en venta.",
+      );
+    } finally {
+      setProcesandoVenta(null);
+    }
+  };
+
   const obtenerClaseEstado = (estado) => {
     const clases = {
-      BORRADOR: "quote-status quote-status-draft",
-      ENVIADA: "quote-status quote-status-sent",
+      BORRADOR:
+        "quote-status quote-status-draft",
+      ENVIADA:
+        "quote-status quote-status-sent",
       ACEPTADA:
         "quote-status quote-status-accepted",
       RECHAZADA:
@@ -294,7 +355,10 @@ function QuotesPage({
             </div>
 
             <div>
-              <span>Cotizaciones registradas</span>
+              <span>
+                Cotizaciones registradas
+              </span>
+
               <strong>
                 {cotizaciones.length}
               </strong>
@@ -325,9 +389,12 @@ function QuotesPage({
               size={36}
             />
 
-            <p>Cargando cotizaciones...</p>
+            <p>
+              Cargando cotizaciones...
+            </p>
           </div>
-        ) : cotizacionesFiltradas.length === 0 ? (
+        ) : cotizacionesFiltradas.length ===
+          0 ? (
           <div className="empty-dashboard-state">
             <TriangleAlert size={34} />
 
@@ -533,9 +600,41 @@ function QuotesPage({
                             </>
                           )}
 
-                          {![
-                            "BORRADOR",
-                            "ENVIADA",
+                          {cotizacion.estado ===
+                            "ACEPTADA" && (
+                            <button
+                              type="button"
+                              className="quote-action-button quote-action-success"
+                              onClick={() =>
+                                convertirEnVenta(
+                                  cotizacion,
+                                )
+                              }
+                              disabled={
+                                procesandoVenta ===
+                                cotizacion.id
+                              }
+                            >
+                              {procesandoVenta ===
+                              cotizacion.id ? (
+                                <LoaderCircle
+                                  className="spinner"
+                                  size={17}
+                                />
+                              ) : (
+                                <ShoppingCart
+                                  size={17}
+                                />
+                              )}
+
+                              Convertir en venta
+                            </button>
+                          )}
+
+                          {[
+                            "RECHAZADA",
+                            "VENCIDA",
+                            "CONVERTIDA",
                           ].includes(
                             cotizacion.estado,
                           ) && (
@@ -556,9 +655,13 @@ function QuotesPage({
 
       {mostrarFormulario && (
         <QuoteForm
-          cotizacionEditar={cotizacionEditar}
+          cotizacionEditar={
+            cotizacionEditar
+          }
           onCancelar={cerrarFormulario}
-          onCotizacionCreada={manejarCreada}
+          onCotizacionCreada={
+            manejarCreada
+          }
           onCotizacionActualizada={
             manejarActualizada
           }

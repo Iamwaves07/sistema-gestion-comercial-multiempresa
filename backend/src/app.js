@@ -11,6 +11,7 @@ import rolRouter from "./routes/rol.routes.js";
 import cors from "cors";
 import helmet from "helmet";
 import cotizacionRouter from "./routes/cotizacion.routes.js";
+import ventaRouter from "./routes/venta.routes.js";
 
 import { loginLimiter } from "./middlewares/security.middleware.js";
 import {
@@ -72,6 +73,7 @@ app.use("/cotizaciones", cotizacionRouter);
 app.use("/empresas", empresaRouter);
 app.use("/usuarios", usuarioRouter);
 app.use("/roles", rolRouter);
+app.use("/ventas", ventaRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
