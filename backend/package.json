@@ -4,12 +4,12 @@
   "private": true,
   "description": "API backend para el Sistema de Gestión Comercial Multiempresa para PYMEs",
   "main": "src/server.js",
-"scripts": {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js",
-  "seed": "node scripts/seed.js",
-  "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
-},
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
   "author": "Yesenia Nicole Fernandois Badilla",
   "license": "UNLICENSED",
   "type": "module",
@@ -23,7 +23,8 @@
     "express-rate-limit": "^8.6.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "transbank-sdk": "^6.1.1"
   },
   "devDependencies": {
     "jest": "^30.4.2",

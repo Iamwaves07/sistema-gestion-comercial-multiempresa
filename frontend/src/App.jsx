@@ -32,6 +32,39 @@ function obtenerSesionGuardada() {
   }
 }
 
+/*
+ * =========================================================
+ * SECCIÓN INICIAL
+ * =========================================================
+ *
+ * Normalmente la aplicación comienza en Inicio.
+ *
+ * Si el navegador está regresando desde Webpay,
+ * el backend nos redirige al frontend utilizando:
+ *
+ * ?webpay=aprobado
+ * ?webpay=rechazado
+ * ?webpay=cancelado
+ * etc.
+ *
+ * En ese caso abrimos directamente Ventas para que
+ * SalesPage pueda leer el resultado y mostrarlo.
+ * =========================================================
+ */
+
+function obtenerSeccionInicial() {
+  const parametros =
+    new URLSearchParams(
+      window.location.search,
+    );
+
+  if (parametros.has("webpay")) {
+    return "ventas";
+  }
+
+  return "inicio";
+}
+
 const modulos = {
   empresas: {
     title: "Empresas",
@@ -76,11 +109,19 @@ function App() {
   );
 
   const [seccionActiva, setSeccionActiva] =
-    useState("inicio");
+    useState(obtenerSeccionInicial);
 
   const iniciarSesion = (datosSesion) => {
     setSesion(datosSesion);
-    setSeccionActiva("inicio");
+
+    /*
+     * Si por alguna razón Webpay regresó cuando
+     * la sesión había expirado, después del login
+     * volvemos igualmente al módulo Ventas.
+     */
+    setSeccionActiva(
+      obtenerSeccionInicial(),
+    );
   };
 
   const cerrarSesion = useCallback(() => {

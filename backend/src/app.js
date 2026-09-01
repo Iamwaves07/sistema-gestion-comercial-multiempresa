@@ -14,6 +14,7 @@ import cotizacionRouter from "./routes/cotizacion.routes.js";
 import ventaRouter from "./routes/venta.routes.js";
 import proveedorRouter from "./routes/proveedor.routes.js";
 import ordenCompraRouter from "./routes/ordenCompra.routes.js";
+import pagoRouter from "./routes/pago.routes.js";
 
 import { loginLimiter } from "./middlewares/security.middleware.js";
 import {
@@ -31,13 +32,13 @@ app.use(
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 app.use(
   express.json({
     limit: "100kb",
-  })
+  }),
 );
 
 app.get("/health", (req, res) => {
@@ -78,6 +79,7 @@ app.use("/roles", rolRouter);
 app.use("/ventas", ventaRouter);
 app.use("/proveedores", proveedorRouter);
 app.use("/ordenes-compra", ordenCompraRouter);
+app.use("/pagos", pagoRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -59,6 +59,28 @@ const incluirVenta = {
       },
     },
   },
+
+  /*
+   * No exponemos token ni sessionId de Webpay
+   * en el listado normal de ventas.
+   */
+  pagos: {
+    select: {
+      id: true,
+      estado: true,
+      proveedor: true,
+      codigoAutorizacion: true,
+      codigoRespuesta: true,
+      tipoPago: true,
+      numeroCuotas: true,
+      fechaCreacion: true,
+      fechaResolucion: true,
+    },
+
+    orderBy: {
+      fechaCreacion: "desc",
+    },
+  },
 };
 
 /*
@@ -78,8 +100,6 @@ const redondearDinero = (valor) => {
 /*
  * Los precios de Producto representan el precio
  * FINAL de venta al cliente, es decir, IVA incluido.
- *
- * Por lo tanto:
  *
  * Neto = Total / 1,19
  * IVA  = Total - Neto
@@ -213,8 +233,8 @@ const validarDetallesVentaDirecta = async (
     productosUsados.add(productoId);
 
     /*
-     * El precio SIEMPRE se obtiene del backend.
-     * No confiamos en precios enviados por frontend.
+     * Precio y stock siempre obtenidos desde
+     * el backend.
      */
     const producto =
       await prisma.producto.findFirst({
@@ -241,6 +261,13 @@ const validarDetallesVentaDirecta = async (
       };
     }
 
+    /*
+     * Todavía comprobamos que exista stock antes
+     * de crear la venta pendiente.
+     *
+     * El descuento definitivo se realizará
+     * solamente después de aprobar el pago.
+     */
     if (producto.stock < cantidad) {
       return {
         error: `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}, requerido: ${cantidad}`,
@@ -264,6 +291,7 @@ const validarDetallesVentaDirecta = async (
       cantidad,
       precioUnitario,
       subtotal,
+
       subtotalNeto:
         desgloseIva.subtotalNeto,
 
@@ -331,22 +359,30 @@ router.get(
  * CREAR VENTA DIRECTA
  * =========================================================
  *
- * Flujo:
+ * NUEVO FLUJO v0.21.0
  *
  * Cliente
  *    ↓
  * Productos
  *    ↓
- * Precio final IVA incluido
+ * Venta PENDIENTE_PAGO
+ *    ↓
+ * Webpay
+ *    ↓
+ * Pago aprobado
  *    ↓
  * Venta CONFIRMADA
  *    ↓
  * Stock -
  *    ↓
- * Movimientos SALIDA
+ * Movimiento SALIDA
  *
- * cotizacionId queda NULL para identificar
- * que la venta fue realizada directamente.
+ * IMPORTANTE:
+ *
+ * En esta ruta NO descontamos inventario.
+ * El módulo de pagos será responsable de
+ * hacerlo únicamente cuando Webpay confirme
+ * correctamente la transacción.
  * =========================================================
  */
 
@@ -379,16 +415,14 @@ router.post(
         });
       }
 
-      /*
-       * El cliente debe pertenecer a la
-       * empresa autenticada y estar activo.
-       */
       const cliente =
         await prisma.cliente.findFirst({
           where: {
             id: clienteIdNumerico,
+
             empresaId:
               req.auth.empresaId,
+
             estado: true,
           },
         });
@@ -421,7 +455,8 @@ router.post(
             resultadoDetalles.error,
 
           ...(resultadoDetalles.code && {
-            code: resultadoDetalles.code,
+            code:
+              resultadoDetalles.code,
           }),
         });
       }
@@ -429,11 +464,6 @@ router.post(
       const detallesNormalizados =
         resultadoDetalles.detalles;
 
-      /*
-       * Los subtotales de línea contienen IVA.
-       * Sumamos esos valores para obtener el
-       * precio final completo de la venta.
-       */
       const total =
         redondearDinero(
           detallesNormalizados.reduce(
@@ -444,9 +474,6 @@ router.post(
           ),
         );
 
-      /*
-       * Desglosamos el IVA incluido.
-       */
       const totales =
         calcularIvaIncluido(total);
 
@@ -456,175 +483,82 @@ router.post(
           req.auth.empresaId,
         );
 
+      /*
+       * Creamos la venta, pero todavía
+       * NO modificamos el inventario.
+       */
       const ventaCreada =
-        await prisma.$transaction(
-          async (tx) => {
-            /*
-             * Creamos primero la venta.
-             *
-             * cotizacionId no se informa,
-             * por lo que queda NULL y
-             * representa una venta directa.
-             */
-            const venta =
-              await tx.venta.create({
-                data: {
-                  empresaId:
-                    req.auth.empresaId,
+        await prisma.venta.create({
+          data: {
+            empresaId:
+              req.auth.empresaId,
 
-                  clienteId:
-                    clienteIdNumerico,
+            clienteId:
+              clienteIdNumerico,
 
-                  usuarioId:
-                    req.auth.usuarioId,
+            usuarioId:
+              req.auth.usuarioId,
 
-                  numero,
+            numero,
 
-                  estado: "CONFIRMADA",
-
-                  /*
-                   * subtotal se conserva por
-                   * compatibilidad con el modelo
-                   * histórico del sistema.
-                   *
-                   * Representa el precio final
-                   * antes del desglose tributario.
-                   */
-                  subtotal:
-                    totales.total,
-
-                  subtotalNeto:
-                    totales.subtotalNeto,
-
-                  tasaIva:
-                    totales.tasaIva,
-
-                  montoIva:
-                    totales.montoIva,
-
-                  total:
-                    totales.total,
-
-                  observacion:
-                    String(
-                      observacion || "",
-                    ).trim() || null,
-
-                  detalles: {
-                    create:
-                      detallesNormalizados.map(
-                        (detalle) => ({
-                          productoId:
-                            detalle.productoId,
-
-                          cantidad:
-                            detalle.cantidad,
-
-                          precioUnitario:
-                            detalle.precioUnitario,
-
-                          subtotal:
-                            detalle.subtotal,
-
-                          subtotalNeto:
-                            detalle.subtotalNeto,
-                        }),
-                      ),
-                  },
-                },
-              });
+            estado:
+              "PENDIENTE_PAGO",
 
             /*
-             * Descontamos stock de forma segura.
-             * Aunque lo validamos previamente,
-             * volvemos a comprobarlo dentro de
-             * la transacción.
+             * subtotal se mantiene por
+             * compatibilidad histórica.
              */
-            for (
-              const detalle of
-              detallesNormalizados
-            ) {
-              const resultadoStock =
-                await tx.producto.updateMany({
-                  where: {
-                    id: detalle.productoId,
+            subtotal:
+              totales.total,
 
-                    empresaId:
-                      req.auth.empresaId,
+            subtotalNeto:
+              totales.subtotalNeto,
 
-                    estado: true,
+            tasaIva:
+              totales.tasaIva,
 
-                    stock: {
-                      gte: detalle.cantidad,
-                    },
-                  },
+            montoIva:
+              totales.montoIva,
 
-                  data: {
-                    stock: {
-                      decrement:
-                        detalle.cantidad,
-                    },
-                  },
-                });
+            total:
+              totales.total,
 
-              if (
-                resultadoStock.count !== 1
-              ) {
-                const errorStock =
-                  new Error(
-                    `Stock insuficiente para "${detalle.producto.nombre}"`,
-                  );
+            observacion:
+              String(
+                observacion || "",
+              ).trim() || null,
 
-                errorStock.code =
-                  "STOCK_INSUFICIENTE";
+            detalles: {
+              create:
+                detallesNormalizados.map(
+                  (detalle) => ({
+                    productoId:
+                      detalle.productoId,
 
-                throw errorStock;
-              }
+                    cantidad:
+                      detalle.cantidad,
 
-              /*
-               * Cada producto vendido genera
-               * un movimiento SALIDA.
-               */
-              await tx.movimientoInventario.create({
-                data: {
-                  empresaId:
-                    req.auth.empresaId,
+                    precioUnitario:
+                      detalle.precioUnitario,
 
-                  productoId:
-                    detalle.productoId,
+                    subtotal:
+                      detalle.subtotal,
 
-                  usuarioId:
-                    req.auth.usuarioId,
-
-                  ventaId: venta.id,
-
-                  tipo: "SALIDA",
-
-                  cantidad:
-                    detalle.cantidad,
-
-                  observacion:
-                    `Salida generada por ${numero} - venta directa`,
-                },
-              });
-            }
-
-            return tx.venta.findUnique({
-              where: {
-                id: venta.id,
-              },
-
-              include:
-                incluirVenta,
-            });
+                    subtotalNeto:
+                      detalle.subtotalNeto,
+                  }),
+                ),
+            },
           },
-        );
+
+          include: incluirVenta,
+        });
 
       return res.status(201).json({
         success: true,
 
         message:
-          "Venta directa registrada correctamente",
+          "Venta creada y pendiente de pago",
 
         data: {
           venta: ventaCreada,
@@ -643,9 +577,11 @@ router.post(
         return res.status(409).json({
           success: false,
 
-          message: error.message,
+          message:
+            error.message,
 
-          code: "STOCK_INSUFICIENTE",
+          code:
+            "STOCK_INSUFICIENTE",
         });
       }
 
@@ -745,9 +681,10 @@ router.get(
  * CONVERTIR COTIZACIÓN A VENTA
  * =========================================================
  *
- * Mantiene los precios históricos de la
- * cotización y agrega el desglose del IVA
- * incluido en esos valores.
+ * La cotización conserva sus precios históricos,
+ * pero la nueva venta queda PENDIENTE_PAGO.
+ *
+ * El stock todavía NO se descuenta.
  * =========================================================
  */
 
@@ -795,6 +732,7 @@ router.post(
               select: {
                 id: true,
                 numero: true,
+                estado: true,
               },
             },
           },
@@ -851,7 +789,11 @@ router.post(
       }
 
       /*
-       * Validaciones previas.
+       * Validamos disponibilidad actual antes
+       * de generar la venta pendiente.
+       *
+       * El stock se comprobará nuevamente
+       * cuando el pago sea aprobado.
        */
       for (
         const detalle of
@@ -894,10 +836,6 @@ router.post(
         }
       }
 
-      /*
-       * El total de la cotización representa
-       * el precio final al cliente.
-       */
       const totalVenta =
         redondearDinero(
           cotizacion.total,
@@ -951,8 +889,8 @@ router.post(
         await prisma.$transaction(
           async (tx) => {
             /*
-             * Se conservan los valores históricos
-             * de la cotización.
+             * La venta queda pendiente.
+             * NO se descuenta stock aquí.
              */
             const venta =
               await tx.venta.create({
@@ -970,6 +908,9 @@ router.post(
                     cotizacion.id,
 
                   numero,
+
+                  estado:
+                    "PENDIENTE_PAGO",
 
                   subtotal:
                     cotizacion.subtotal,
@@ -997,82 +938,9 @@ router.post(
               });
 
             /*
-             * Descontamos stock nuevamente
-             * dentro de la transacción.
-             */
-            for (
-              const detalle of
-              cotizacion.detalles
-            ) {
-              const resultadoStock =
-                await tx.producto.updateMany({
-                  where: {
-                    id:
-                      detalle.productoId,
-
-                    empresaId:
-                      req.auth.empresaId,
-
-                    estado: true,
-
-                    stock: {
-                      gte:
-                        detalle.cantidad,
-                    },
-                  },
-
-                  data: {
-                    stock: {
-                      decrement:
-                        detalle.cantidad,
-                    },
-                  },
-                });
-
-              if (
-                resultadoStock.count !==
-                1
-              ) {
-                const errorStock =
-                  new Error(
-                    `Stock insuficiente para "${detalle.producto.nombre}"`,
-                  );
-
-                errorStock.code =
-                  "STOCK_INSUFICIENTE";
-
-                throw errorStock;
-              }
-
-              await tx.movimientoInventario.create({
-                data: {
-                  empresaId:
-                    req.auth.empresaId,
-
-                  productoId:
-                    detalle.productoId,
-
-                  usuarioId:
-                    req.auth.usuarioId,
-
-                  ventaId:
-                    venta.id,
-
-                  tipo: "SALIDA",
-
-                  cantidad:
-                    detalle.cantidad,
-
-                  observacion:
-                    `Salida generada por ${numero}`,
-                },
-              });
-            }
-
-            /*
-             * La cotización queda convertida
-             * solamente si toda la transacción
-             * resultó correctamente.
+             * La cotización ya fue transformada
+             * en una venta, aunque todavía esté
+             * pendiente de pago.
              */
             await tx.cotizacion.update({
               where: {
@@ -1101,7 +969,7 @@ router.post(
         success: true,
 
         message:
-          "Cotización convertida en venta correctamente",
+          "Cotización convertida en venta pendiente de pago",
 
         data: {
           venta: ventaCreada,
@@ -1152,16 +1020,22 @@ router.post(
  * ANULAR VENTA
  * =========================================================
  *
- * La anulación:
+ * Existen ahora dos casos.
  *
- * CONFIRMADA → ANULADA
+ * 1) PENDIENTE_PAGO
  *
- * devuelve exactamente las unidades vendidas
- * y genera movimientos ENTRADA.
+ *    Puede anularse sin modificar inventario porque
+ *    todavía no se realizó ninguna SALIDA.
  *
- * El cambio de estado se realiza dentro de la
- * misma transacción para evitar una devolución
- * de stock duplicada.
+ * 2) CONFIRMADA
+ *
+ *    Las ventas históricas que no tienen un pago Webpay
+ *    aprobado mantienen el comportamiento anterior:
+ *    restaurar stock y generar ENTRADA.
+ *
+ *    Si existe un pago Webpay APROBADO, no anulamos desde
+ *    esta ruta. Primero deberá realizarse la reversa/anulación
+ *    del pago mediante el módulo de pagos.
  * =========================================================
  */
 
@@ -1202,6 +1076,13 @@ router.patch(
                 producto: true,
               },
             },
+
+            pagos: {
+              select: {
+                id: true,
+                estado: true,
+              },
+            },
           },
         });
 
@@ -1225,17 +1106,100 @@ router.patch(
         });
       }
 
+      const pagoPendiente =
+        venta.pagos.some(
+          (pago) =>
+            pago.estado ===
+            "PENDIENTE",
+        );
+
+      const pagoAprobado =
+        venta.pagos.some(
+          (pago) =>
+            pago.estado ===
+            "APROBADO",
+        );
+
+      /*
+       * =====================================================
+       * VENTA PENDIENTE DE PAGO
+       * =====================================================
+       */
+
+      if (
+        venta.estado ===
+        "PENDIENTE_PAGO"
+      ) {
+        /*
+         * No permitimos anular mientras haya una
+         * transacción Webpay activa, porque el cliente
+         * podría continuar el pago externamente.
+         */
+        if (pagoPendiente) {
+          return res.status(409).json({
+            success: false,
+
+            message:
+              "La venta posee un pago pendiente. Debes finalizar o resolver el intento de pago antes de anularla",
+          });
+        }
+
+        const ventaAnulada =
+          await prisma.venta.update({
+            where: {
+              id: venta.id,
+            },
+
+            data: {
+              estado:
+                "ANULADA",
+            },
+
+            include:
+              incluirVenta,
+          });
+
+        return res.status(200).json({
+          success: true,
+
+          message:
+            "Venta pendiente anulada correctamente. No fue necesario modificar el stock",
+
+          data: {
+            venta:
+              ventaAnulada,
+          },
+        });
+      }
+
+      /*
+       * =====================================================
+       * VENTA CONFIRMADA CON PAGO WEBPAY
+       * =====================================================
+       */
+
+      if (pagoAprobado) {
+        return res.status(409).json({
+          success: false,
+
+          message:
+            "Esta venta posee un pago Webpay aprobado. La anulación debe realizarse desde el módulo de pagos para mantener sincronizado el pago y el inventario",
+        });
+      }
+
+      /*
+       * =====================================================
+       * VENTA CONFIRMADA HISTÓRICA
+       * =====================================================
+       *
+       * Conservamos exactamente el comportamiento
+       * anterior para ventas creadas antes del módulo
+       * Webpay.
+       */
+
       const ventaAnulada =
         await prisma.$transaction(
           async (tx) => {
-            /*
-             * Cambiamos el estado primero
-             * mediante una operación condicional.
-             *
-             * Si dos solicitudes intentaran anular
-             * simultáneamente la misma venta, solo
-             * una podrá continuar.
-             */
             const cambioEstado =
               await tx.venta.updateMany({
                 where: {
@@ -1268,10 +1232,6 @@ router.patch(
               throw errorAnulacion;
             }
 
-            /*
-             * Restauramos exactamente el
-             * inventario descontado.
-             */
             for (
               const detalle of
               venta.detalles
@@ -1323,7 +1283,8 @@ router.patch(
                   ventaId:
                     venta.id,
 
-                  tipo: "ENTRADA",
+                  tipo:
+                    "ENTRADA",
 
                   cantidad:
                     detalle.cantidad,
@@ -1336,7 +1297,8 @@ router.patch(
 
             return tx.venta.findUnique({
               where: {
-                id: venta.id,
+                id:
+                  venta.id,
               },
 
               include:

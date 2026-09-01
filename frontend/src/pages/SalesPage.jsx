@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  CreditCard,
   LoaderCircle,
   Plus,
+  RotateCcw,
   Save,
   Search,
   ShoppingCart,
@@ -32,6 +34,26 @@ function SalesPage({
 
   const [procesandoVenta, setProcesandoVenta] =
     useState(null);
+
+  const [procesandoPago, setProcesandoPago] =
+    useState(null);
+
+  const [reversandoPago, setReversandoPago] =
+    useState(null);
+
+  /*
+   * =========================================================
+   * ROL ACTUAL
+   * =========================================================
+   */
+
+  const nombreRol =
+    sesion.rol?.nombre ||
+    sesion.usuario?.rol?.nombre ||
+    "";
+
+  const esAdministrador =
+    nombreRol === "Administrador";
 
   /*
    * =========================================================
@@ -104,6 +126,73 @@ function SalesPage({
 
   /*
    * =========================================================
+   * RESULTADO DEL RETORNO WEBPAY
+   * =========================================================
+   */
+
+  useEffect(() => {
+    const parametros =
+      new URLSearchParams(
+        window.location.search,
+      );
+
+    const resultadoWebpay =
+      parametros.get("webpay");
+
+    if (!resultadoWebpay) {
+      return;
+    }
+
+    const mensajesExito = {
+      aprobado:
+        "Pago aprobado correctamente. La venta fue confirmada y el stock fue descontado.",
+
+      "reversado-stock":
+        "El pago fue autorizado, pero el stock ya no estaba disponible. La transacción fue reversada automáticamente.",
+    };
+
+    const mensajesError = {
+      rechazado:
+        "El pago fue rechazado. La venta continúa pendiente y puedes realizar un nuevo intento.",
+
+      cancelado:
+        "El pago fue cancelado. La venta continúa pendiente de pago.",
+
+      "no-encontrado":
+        "No fue posible encontrar el intento de pago asociado al retorno de Webpay.",
+
+      "error-stock":
+        "El pago fue autorizado, pero hubo un problema al confirmar el stock. El caso requiere revisión administrativa.",
+
+      error:
+        "Ocurrió un problema al procesar el retorno de Webpay.",
+    };
+
+    if (mensajesExito[resultadoWebpay]) {
+      setMensajeExito(
+        mensajesExito[resultadoWebpay],
+      );
+
+      setError("");
+    }
+
+    if (mensajesError[resultadoWebpay]) {
+      setError(
+        mensajesError[resultadoWebpay],
+      );
+
+      setMensajeExito("");
+    }
+
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname,
+    );
+  }, []);
+
+  /*
+   * =========================================================
    * FILTRO
    * =========================================================
    */
@@ -131,6 +220,11 @@ function SalesPage({
           .filter(Boolean)
           .join(" ") || "";
 
+      const estadosPago =
+        venta.pagos
+          ?.map((pago) => pago.estado)
+          .join(" ") || "";
+
       const campos = [
         venta.numero,
         venta.estado,
@@ -140,6 +234,7 @@ function SalesPage({
         venta.cotizacion?.numero,
         origen,
         productosVenta,
+        estadosPago,
       ];
 
       return campos.some((campo) =>
@@ -176,6 +271,9 @@ function SalesPage({
 
   const obtenerClaseEstado = (estado) => {
     const clases = {
+      PENDIENTE_PAGO:
+        "quote-status quote-status-draft",
+
       CONFIRMADA:
         "quote-status quote-status-accepted",
 
@@ -195,6 +293,58 @@ function SalesPage({
         (Number(valor) + Number.EPSILON) *
           100,
       ) / 100
+    );
+  };
+
+  /*
+   * =========================================================
+   * PAGOS DE UNA VENTA
+   * =========================================================
+   */
+
+  const obtenerPagoAprobado = (venta) => {
+    return venta.pagos?.find(
+      (pago) =>
+        pago.estado === "APROBADO",
+    );
+  };
+
+  const obtenerPagoPendiente = (venta) => {
+    return venta.pagos?.find(
+      (pago) =>
+        pago.estado === "PENDIENTE",
+    );
+  };
+
+  const obtenerUltimoPago = (venta) => {
+    return venta.pagos?.[0] || null;
+  };
+
+  const obtenerTextoPago = (venta) => {
+    const ultimoPago =
+      obtenerUltimoPago(venta);
+
+    if (!ultimoPago) {
+      return "";
+    }
+
+    const textos = {
+      PENDIENTE:
+        "Webpay pendiente",
+
+      APROBADO:
+        "Webpay aprobado",
+
+      RECHAZADO:
+        "Último pago: RECHAZADO",
+
+      ANULADO:
+        "Webpay anulado",
+    };
+
+    return (
+      textos[ultimoPago.estado] ||
+      ultimoPago.estado
     );
   };
 
@@ -397,15 +547,6 @@ function SalesPage({
    * =========================================================
    * IVA INCLUIDO
    * =========================================================
-   *
-   * Producto.precio representa el precio final
-   * de venta al público.
-   *
-   * NO sumamos otro 19%.
-   *
-   * Neto = Total / 1,19
-   * IVA  = Total - Neto
-   * =========================================================
    */
 
   const totalVentaDirecta = useMemo(() => {
@@ -547,11 +688,6 @@ function SalesPage({
     setErrorVenta("");
 
     try {
-      /*
-       * NO enviamos precio, Neto, IVA ni Total.
-       * El backend obtiene los precios desde
-       * PostgreSQL y calcula los montos.
-       */
       const datosVenta = {
         clienteId: Number(
           formularioVenta.clienteId,
@@ -595,8 +731,7 @@ function SalesPage({
       ]);
 
       setMensajeExito(
-        resultado.message ||
-          "Venta directa registrada correctamente.",
+        `${ventaCreada.numero} fue creada correctamente. Ahora debes completar el pago con Webpay.`,
       );
 
       setMostrarVentaDirecta(false);
@@ -623,13 +758,91 @@ function SalesPage({
 
   /*
    * =========================================================
-   * ANULAR VENTA
+   * INICIAR PAGO WEBPAY
+   * =========================================================
+   */
+
+  const iniciarPagoWebpay = async (venta) => {
+    setProcesandoPago(venta.id);
+    setError("");
+    setMensajeExito("");
+
+    try {
+      const resultado = await apiRequest(
+        `/pagos/iniciar/${venta.id}`,
+        {
+          method: "POST",
+        },
+      );
+
+      const urlWebpay =
+        resultado?.data?.webpay?.url;
+
+      const tokenWebpay =
+        resultado?.data?.webpay?.token;
+
+      if (
+        !urlWebpay ||
+        !tokenWebpay
+      ) {
+        throw new Error(
+          "Webpay no entregó los datos necesarios para continuar con el pago.",
+        );
+      }
+
+      const formulario =
+        document.createElement("form");
+
+      formulario.method = "POST";
+      formulario.action = urlWebpay;
+      formulario.style.display = "none";
+
+      const campoToken =
+        document.createElement("input");
+
+      campoToken.type = "hidden";
+      campoToken.name = "token_ws";
+      campoToken.value = tokenWebpay;
+
+      formulario.appendChild(
+        campoToken,
+      );
+
+      document.body.appendChild(
+        formulario,
+      );
+
+      formulario.submit();
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setError(
+        errorSolicitud.message ||
+          "No fue posible iniciar el pago con Webpay.",
+      );
+
+      setProcesandoPago(null);
+    }
+  };
+
+  /*
+   * =========================================================
+   * ANULAR VENTA SIN PAGO WEBPAY APROBADO
    * =========================================================
    */
 
   const anularVenta = async (venta) => {
+    const esPendiente =
+      venta.estado ===
+      "PENDIENTE_PAGO";
+
     const confirmar = window.confirm(
-      `¿Seguro que deseas anular ${venta.numero}?\n\nEl stock vendido será devuelto al inventario.`,
+      esPendiente
+        ? `¿Seguro que deseas anular ${venta.numero}?\n\nLa venta todavía no ha sido pagada y no se ha descontado stock.`
+        : `¿Seguro que deseas anular ${venta.numero}?\n\nEl stock vendido será devuelto.`,
     );
 
     if (!confirmar) {
@@ -680,6 +893,91 @@ function SalesPage({
 
   /*
    * =========================================================
+   * REVERSAR PAGO WEBPAY
+   * =========================================================
+   *
+   * Solo el Administrador ve esta acción.
+   *
+   * Pago APROBADO
+   *      ↓
+   * Transbank refund()
+   *      ↓
+   * Pago ANULADO
+   *      ↓
+   * Venta ANULADA
+   *      ↓
+   * Stock restaurado
+   *      ↓
+   * Movimiento ENTRADA
+   * =========================================================
+   */
+
+  const reversarPagoWebpay = async (
+    venta,
+    pago,
+  ) => {
+    const confirmar = window.confirm(
+      `¿Seguro que deseas anular el pago Webpay de ${venta.numero}?\n\nSe solicitará la reversa a Transbank, la venta quedará ANULADA y las unidades serán devueltas a Productos.`,
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setReversandoPago(pago.id);
+    setError("");
+    setMensajeExito("");
+
+    try {
+      const resultado = await apiRequest(
+        `/pagos/${pago.id}/anular`,
+        {
+          method: "POST",
+        },
+      );
+
+      /*
+       * Consultamos nuevamente la venta para
+       * obtener su estado, pagos y relaciones
+       * completas después de la reversa.
+       */
+      const resultadoVenta =
+        await apiRequest(
+          `/ventas/${venta.id}`,
+        );
+
+      const ventaActualizada =
+        resultadoVenta.data.venta;
+
+      setVentas((actuales) =>
+        actuales.map((actual) =>
+          actual.id === ventaActualizada.id
+            ? ventaActualizada
+            : actual,
+        ),
+      );
+
+      setMensajeExito(
+        resultado.message ||
+          "Pago Webpay anulado correctamente.",
+      );
+    } catch (errorSolicitud) {
+      if (errorSolicitud.status === 401) {
+        onLogout();
+        return;
+      }
+
+      setError(
+        errorSolicitud.message ||
+          "No fue posible anular el pago Webpay.",
+      );
+    } finally {
+      setReversandoPago(null);
+    }
+  };
+
+  /*
+   * =========================================================
    * RENDER
    * =========================================================
    */
@@ -702,7 +1000,8 @@ function SalesPage({
           <p>
             Registra ventas directas o consulta
             ventas generadas desde cotizaciones,
-            controlando IVA, inventario y estado.
+            controlando IVA, pago Webpay,
+            stock y estado.
           </p>
         </div>
 
@@ -763,7 +1062,7 @@ function SalesPage({
                   evento.target.value,
                 )
               }
-              placeholder="Buscar por venta, cliente, producto, cotización, origen o estado"
+              placeholder="Buscar por venta, cliente, producto, cotización, pago, origen o estado"
               aria-label="Buscar ventas"
             />
           </label>
@@ -791,7 +1090,7 @@ function SalesPage({
             <p>
               {ventas.length === 0
                 ? "Las ventas directas y las cotizaciones convertidas aparecerán en esta sección."
-                : "Prueba utilizando otro número de venta, cliente, producto, cotización, origen o estado."}
+                : "Prueba utilizando otro número de venta, cliente, producto, cotización, pago, origen o estado."}
             </p>
           </div>
         ) : (
@@ -813,187 +1112,327 @@ function SalesPage({
 
               <tbody>
                 {ventasFiltradas.map(
-                  (venta) => (
-                    <tr key={venta.id}>
-                      <td>
-                        <div className="user-main-data">
-                          <strong>
-                            {venta.numero}
-                          </strong>
+                  (venta) => {
+                    const pagoAprobado =
+                      obtenerPagoAprobado(
+                        venta,
+                      );
 
-                          <small>
-                            {venta.usuario
-                              ?.nombre ||
-                              "Usuario no disponible"}
-                          </small>
-                        </div>
-                      </td>
+                    const pagoPendiente =
+                      obtenerPagoPendiente(
+                        venta,
+                      );
 
-                      <td>
-                        <div className="user-main-data">
-                          <strong>
-                            {venta.cliente
-                              ?.nombre ||
-                              "Cliente no disponible"}
-                          </strong>
+                    const textoPago =
+                      obtenerTextoPago(
+                        venta,
+                      );
 
-                          <small>
-                            {venta.cliente
-                              ?.rut || ""}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="user-main-data">
-                          <strong>
-                            {venta.cotizacion
-                              ?.numero ||
-                              "Venta directa"}
-                          </strong>
-
-                          <small>
-                            {venta.cotizacion
-                              ? "Cotización convertida"
-                              : "Sin cotización asociada"}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="user-main-data">
-                          {venta.detalles?.length >
-                          0 ? (
-                            venta.detalles.map(
-                              (detalle) => (
-                                <div
-                                  key={
-                                    detalle.id
-                                  }
-                                >
-                                  <strong>
-                                    {detalle
-                                      .producto
-                                      ?.nombre ||
-                                      "Producto no disponible"}
-                                  </strong>
-
-                                  <small>
-                                    {
-                                      detalle.cantidad
-                                    }{" "}
-                                    {detalle.cantidad ===
-                                    1
-                                      ? "unidad"
-                                      : "unidades"}{" "}
-                                    ×{" "}
-                                    {formatearPrecio(
-                                      detalle.precioUnitario,
-                                    )}
-                                  </small>
-                                </div>
-                              ),
-                            )
-                          ) : (
-                            <small>
-                              Sin detalle de
-                              productos
-                            </small>
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="user-main-data">
-                          <small>
-                            {formatearFecha(
-                              venta.fechaCreacion,
-                            )}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>
-                        {venta.montoIva != null ? (
+                    return (
+                      <tr key={venta.id}>
+                        <td>
                           <div className="user-main-data">
                             <strong>
-                              {formatearPrecio(
-                                venta.montoIva,
-                              )}
+                              {venta.numero}
                             </strong>
 
                             <small>
-                              Neto:{" "}
-                              {formatearPrecio(
-                                venta.subtotalNeto,
+                              {venta.usuario
+                                ?.nombre ||
+                                "Usuario no disponible"}
+                            </small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="user-main-data">
+                            <strong>
+                              {venta.cliente
+                                ?.nombre ||
+                                "Cliente no disponible"}
+                            </strong>
+
+                            <small>
+                              {venta.cliente
+                                ?.rut || ""}
+                            </small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="user-main-data">
+                            <strong>
+                              {venta.cotizacion
+                                ?.numero ||
+                                "Venta directa"}
+                            </strong>
+
+                            <small>
+                              {venta.cotizacion
+                                ? "Cotización convertida"
+                                : "Sin cotización asociada"}
+                            </small>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="user-main-data">
+                            {venta.detalles?.length >
+                            0 ? (
+                              venta.detalles.map(
+                                (detalle) => (
+                                  <div
+                                    key={
+                                      detalle.id
+                                    }
+                                  >
+                                    <strong>
+                                      {detalle
+                                        .producto
+                                        ?.nombre ||
+                                        "Producto no disponible"}
+                                    </strong>
+
+                                    <small>
+                                      {
+                                        detalle.cantidad
+                                      }{" "}
+                                      {detalle.cantidad ===
+                                      1
+                                        ? "unidad"
+                                        : "unidades"}{" "}
+                                      ×{" "}
+                                      {formatearPrecio(
+                                        detalle.precioUnitario,
+                                      )}
+                                    </small>
+                                  </div>
+                                ),
+                              )
+                            ) : (
+                              <small>
+                                Sin detalle de
+                                productos
+                              </small>
+                            )}
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="user-main-data">
+                            <small>
+                              {formatearFecha(
+                                venta.fechaCreacion,
                               )}
                             </small>
                           </div>
-                        ) : (
-                          <small>
-                            Venta histórica
-                          </small>
-                        )}
-                      </td>
+                        </td>
 
-                      <td>
-                        <strong>
-                          {formatearPrecio(
-                            venta.total,
+                        <td>
+                          {venta.montoIva != null ? (
+                            <div className="user-main-data">
+                              <strong>
+                                {formatearPrecio(
+                                  venta.montoIva,
+                                )}
+                              </strong>
+
+                              <small>
+                                Neto:{" "}
+                                {formatearPrecio(
+                                  venta.subtotalNeto,
+                                )}
+                              </small>
+                            </div>
+                          ) : (
+                            <small>
+                              Venta histórica
+                            </small>
                           )}
-                        </strong>
-                      </td>
+                        </td>
 
-                      <td>
-                        <span
-                          className={obtenerClaseEstado(
-                            venta.estado,
-                          )}
-                        >
-                          {venta.estado}
-                        </span>
-                      </td>
+                        <td>
+                          <strong>
+                            {formatearPrecio(
+                              venta.total,
+                            )}
+                          </strong>
+                        </td>
 
-                      <td>
-                        <div className="product-actions quote-actions">
-                          {venta.estado ===
-                          "CONFIRMADA" ? (
-                            <button
-                              type="button"
-                              className="quote-action-button quote-action-danger"
-                              onClick={() =>
-                                anularVenta(
-                                  venta,
-                                )
-                              }
-                              disabled={
-                                procesandoVenta ===
-                                venta.id
-                              }
+                        <td>
+                          <div className="user-main-data">
+                            <span
+                              className={obtenerClaseEstado(
+                                venta.estado,
+                              )}
                             >
-                              {procesandoVenta ===
-                              venta.id ? (
-                                <LoaderCircle
-                                  className="spinner"
-                                  size={17}
-                                />
-                              ) : (
-                                <XCircle
-                                  size={17}
-                                />
+                              {venta.estado}
+                            </span>
+
+                            {textoPago && (
+                              <small>
+                                {textoPago}
+                              </small>
+                            )}
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="product-actions quote-actions">
+                            {venta.estado ===
+                              "PENDIENTE_PAGO" && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="dashboard-primary-button"
+                                  onClick={() =>
+                                    iniciarPagoWebpay(
+                                      venta,
+                                    )
+                                  }
+                                  disabled={
+                                    procesandoPago ===
+                                      venta.id ||
+                                    Boolean(
+                                      pagoPendiente,
+                                    )
+                                  }
+                                >
+                                  {procesandoPago ===
+                                  venta.id ? (
+                                    <LoaderCircle
+                                      className="spinner"
+                                      size={17}
+                                    />
+                                  ) : (
+                                    <CreditCard
+                                      size={17}
+                                    />
+                                  )}
+
+                                  {pagoPendiente
+                                    ? "Pago iniciado"
+                                    : "Pagar con Webpay"}
+                                </button>
+
+                                {!pagoPendiente && (
+                                  <button
+                                    type="button"
+                                    className="quote-action-button quote-action-danger"
+                                    onClick={() =>
+                                      anularVenta(
+                                        venta,
+                                      )
+                                    }
+                                    disabled={
+                                      procesandoVenta ===
+                                      venta.id
+                                    }
+                                  >
+                                    {procesandoVenta ===
+                                    venta.id ? (
+                                      <LoaderCircle
+                                        className="spinner"
+                                        size={17}
+                                      />
+                                    ) : (
+                                      <XCircle
+                                        size={17}
+                                      />
+                                    )}
+
+                                    Anular
+                                  </button>
+                                )}
+                              </>
+                            )}
+
+                            {venta.estado ===
+                              "CONFIRMADA" &&
+                              pagoAprobado &&
+                              esAdministrador && (
+                                <button
+                                  type="button"
+                                  className="quote-action-button quote-action-danger"
+                                  onClick={() =>
+                                    reversarPagoWebpay(
+                                      venta,
+                                      pagoAprobado,
+                                    )
+                                  }
+                                  disabled={
+                                    reversandoPago ===
+                                    pagoAprobado.id
+                                  }
+                                >
+                                  {reversandoPago ===
+                                  pagoAprobado.id ? (
+                                    <LoaderCircle
+                                      className="spinner"
+                                      size={17}
+                                    />
+                                  ) : (
+                                    <RotateCcw
+                                      size={17}
+                                    />
+                                  )}
+
+                                  Anular pago
+                                </button>
                               )}
 
-                              Anular
-                            </button>
-                          ) : (
-                            <span className="user-action-restriction">
-                              Venta anulada
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ),
+                            {venta.estado ===
+                              "CONFIRMADA" &&
+                              pagoAprobado &&
+                              !esAdministrador && (
+                                <span className="user-action-restriction">
+                                  Pago Webpay aprobado
+                                </span>
+                              )}
+
+                            {venta.estado ===
+                              "CONFIRMADA" &&
+                              !pagoAprobado && (
+                                <button
+                                  type="button"
+                                  className="quote-action-button quote-action-danger"
+                                  onClick={() =>
+                                    anularVenta(
+                                      venta,
+                                    )
+                                  }
+                                  disabled={
+                                    procesandoVenta ===
+                                    venta.id
+                                  }
+                                >
+                                  {procesandoVenta ===
+                                  venta.id ? (
+                                    <LoaderCircle
+                                      className="spinner"
+                                      size={17}
+                                    />
+                                  ) : (
+                                    <XCircle
+                                      size={17}
+                                    />
+                                  )}
+
+                                  Anular
+                                </button>
+                              )}
+
+                            {venta.estado ===
+                              "ANULADA" && (
+                              <span className="user-action-restriction">
+                                Venta anulada
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  },
                 )}
               </tbody>
             </table>
@@ -1390,6 +1829,18 @@ function SalesPage({
                     </small>
                   </section>
 
+                  <div className="product-info-message">
+                    <CreditCard size={18} />
+
+                    <span>
+                      Al crear la venta quedará
+                      pendiente de pago. El stock
+                      se descontará únicamente
+                      cuando Webpay confirme la
+                      transacción.
+                    </span>
+                  </div>
+
                   <footer className="product-form-actions">
                     <button
                       type="button"
@@ -1421,12 +1872,12 @@ function SalesPage({
                             className="spinner"
                             size={19}
                           />
-                          Confirmando...
+                          Creando...
                         </>
                       ) : (
                         <>
                           <Save size={19} />
-                          Confirmar venta
+                          Crear venta
                         </>
                       )}
                     </button>

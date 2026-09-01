@@ -22,6 +22,7 @@ enum EstadoCotizacion {
 }
 
 enum EstadoVenta {
+  PENDIENTE_PAGO
   CONFIRMADA
   ANULADA
 }
@@ -31,6 +32,13 @@ enum EstadoOrdenCompra {
   EMITIDA
   RECIBIDA
   ANULADA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  ANULADO
 }
 
 model Empresa {
@@ -51,6 +59,7 @@ model Empresa {
   ventas        Venta[]
   proveedores   Proveedor[]
   ordenesCompra OrdenCompra[]
+  pagos         Pago[]
 }
 
 model Rol {
@@ -77,6 +86,7 @@ model Usuario {
   cotizaciones  Cotizacion[]
   ventas        Venta[]
   ordenesCompra OrdenCompra[]
+  pagos         Pago[]
 
   @@index([empresaId])
   @@index([rolId])
@@ -253,6 +263,7 @@ model Venta {
   cotizacion  Cotizacion?            @relation(fields: [cotizacionId], references: [id])
   detalles    DetalleVenta[]
   movimientos MovimientoInventario[]
+  pagos       Pago[]
 
   @@unique([empresaId, numero])
   @@index([empresaId, fechaCreacion])
@@ -282,6 +293,49 @@ model DetalleVenta {
   @@unique([ventaId, productoId])
   @@index([ventaId])
   @@index([productoId])
+}
+
+model Pago {
+  id        Int        @id @default(autoincrement())
+  empresaId Int
+  ventaId   Int
+  usuarioId Int
+
+  // Monto enviado al proveedor de pagos.
+  // Debe coincidir con Venta.total.
+  monto Decimal @db.Decimal(12, 2)
+
+  // Estado interno del intento de pago.
+  estado EstadoPago @default(PENDIENTE)
+
+  // Para este MVP utilizaremos Transbank Webpay Plus.
+  proveedor String @default("TRANSBANK_WEBPAY_PLUS")
+
+  // Identificadores utilizados para iniciar y confirmar
+  // la transacción con el proveedor.
+  buyOrder  String @unique
+  sessionId String
+  token     String? @unique
+
+  // Información devuelta por el proveedor al confirmar
+  // la transacción. No almacenamos PAN ni CVV.
+  codigoAutorizacion String?
+  codigoRespuesta    Int?
+  tipoPago           String?
+  numeroCuotas       Int?
+
+  fechaCreacion      DateTime  @default(now())
+  fechaResolucion    DateTime?
+  fechaActualizacion DateTime  @updatedAt
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  venta   Venta   @relation(fields: [ventaId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId, fechaCreacion])
+  @@index([ventaId])
+  @@index([usuarioId])
+  @@index([estado])
 }
 
 model OrdenCompra {
